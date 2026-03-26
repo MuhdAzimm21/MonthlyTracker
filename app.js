@@ -383,13 +383,13 @@ function updateDashboard() {
       if (item.category === 'Needs') {
         if (isDueSoon) {
           remindersList.innerHTML += `
-            <div class="due-soon" style="margin-bottom: 8px; font-size: 0.85rem;">
+            <div class="due-soon" style="margin-bottom: 5px; font-size: 0.6rem;">
               ⚠️ <strong>${item.desc}</strong> is due on ${item.dueDate} (RM ${item.amount.toFixed(2)})
             </div>
           `;
         } else if (isOverdue) {
           remindersList.innerHTML += `
-            <div class="overdue" style="margin-bottom: 8px; font-size: 0.85rem;">
+            <div class="overdue" style="margin-bottom: 5px; font-size: 0.6rem;">
               🚨 <strong>${item.desc}</strong> was due on ${item.dueDate} (RM ${item.amount.toFixed(2)}) - OVERDUE
             </div>
           `;
