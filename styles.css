@@ -121,13 +121,22 @@ h2 {
 
 input, select, button {
   width: 100%;
+  display: block; /* Ensures they behave as full-width blocks */
   margin-top: 10px;
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #333;
   background: #252525;
   color: white;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Crucial for Safari to include padding in width */
+  font-size: 16px;
+  -webkit-appearance: none; /* Removes Safari default styling */
+  appearance: none;
+}
+
+/* Ensure date inputs show the picker icon and behave correctly */
+input[type="date"] {
+  min-height: 45px; /* Consistent height for Safari date inputs */
 }
 
 button {
