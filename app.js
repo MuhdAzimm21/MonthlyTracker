@@ -306,24 +306,31 @@ function updateDashboard() {
     if (item.category === 'Wants') wantsTotal += item.amount;
     if (item.category === 'Savings') savingsTotal += item.amount;
 
-    // Only show reminders for items NOT completed
+    // Check for due soon / overdue status
     if (item.dueDate && !item.completed) {
       const dueDate = new Date(item.dueDate);
       dueDate.setHours(0,0,0,0);
       
-      if (dueDate >= today && dueDate <= nextWeek) {
-        dueSoonCount++;
-        remindersList.innerHTML += `
-          <div class="due-soon" style="margin-bottom: 8px;">
-            ⚠️ <strong>${item.desc}</strong> is due on ${item.dueDate} (RM ${item.amount.toFixed(2)})
-          </div>
-        `;
-      } else if (dueDate < today) {
-        remindersList.innerHTML += `
-          <div class="overdue" style="margin-bottom: 8px;">
-            🚨 <strong>${item.desc}</strong> was due on ${item.dueDate} (RM ${item.amount.toFixed(2)}) - OVERDUE
-          </div>
-        `;
+      const isDueSoon = dueDate >= today && dueDate <= nextWeek;
+      const isOverdue = dueDate < today;
+
+      if (isDueSoon) dueSoonCount++;
+
+      // Only show reminders for 'Needs' category
+      if (item.category === 'Needs') {
+        if (isDueSoon) {
+          remindersList.innerHTML += `
+            <div class="due-soon" style="margin-bottom: 8px; font-size: 0.85rem;">
+              ⚠️ <strong>${item.desc}</strong> is due on ${item.dueDate} (RM ${item.amount.toFixed(2)})
+            </div>
+          `;
+        } else if (isOverdue) {
+          remindersList.innerHTML += `
+            <div class="overdue" style="margin-bottom: 8px; font-size: 0.85rem;">
+              🚨 <strong>${item.desc}</strong> was due on ${item.dueDate} (RM ${item.amount.toFixed(2)}) - OVERDUE
+            </div>
+          `;
+        }
       }
     }
   });
@@ -362,3 +369,95 @@ window.addEventListener('load', () => {
       .catch(err => console.log('Service Worker Error: ', err));
   }
 });
+
+// CSV Export/Import Functions
+function exportToCSV() {
+  if (data.length === 0) return alert("No data to export");
+
+  const headers = ["Description", "Amount", "Category", "DueDate", "Completed"];
+  const csvContent = [
+    headers.join(","),
+    ...data.map(item => [
+      `"${item.desc.replace(/"/g, '""')}"`,
+      item.amount,
+      item.category,
+      item.dueDate || "",
+      item.completed ? "TRUE" : "FALSE"
+    ].join(","))
+  ].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `budget_tracker_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function importFromCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/);
+    if (lines.length < 2) return alert("Invalid CSV file");
+
+    const importedData = [];
+    // Start from index 1 to skip header
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Robust CSV parsing regex to handle quoted commas
+      const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+      const parts = [];
+      let match;
+      
+      // Manual split logic to handle empty fields between commas
+      const rawParts = [];
+      let current = '';
+      let inQuotes = false;
+      for (let char of line) {
+        if (char === '"') inQuotes = !inQuotes;
+        else if (char === ',' && !inQuotes) {
+          rawParts.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      rawParts.push(current);
+
+      if (rawParts.length < 4) continue;
+
+      const desc = rawParts[0].replace(/^"|"$/g, '').replace(/""/g, '"');
+      const amount = parseFloat(rawParts[1]);
+      const category = rawParts[2].trim();
+      const dueDate = rawParts[3].trim();
+      const completed = rawParts[4] ? rawParts[4].trim().toUpperCase() === "TRUE" : false;
+
+      if (desc && !isNaN(amount)) {
+        importedData.push({ desc, amount, category, dueDate, completed });
+      }
+    }
+
+    if (importedData.length > 0) {
+      if (confirm(`Import ${importedData.length} items? This will ADD to your current list.`)) {
+        data = [...data, ...importedData];
+        saveData();
+        renderAll();
+        alert("Import successful!");
+      }
+    } else {
+      alert("No valid data found in CSV.");
+    }
+    // Reset file input
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+}

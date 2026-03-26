@@ -264,6 +264,25 @@ table {
   }
 }
 
+#reminders-list {
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+#reminders-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+#reminders-list::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+#reminders-list::-webkit-scrollbar-thumb {
+  background: #4CAF50;
+  border-radius: 10px;
+}
+
 .due-soon {
   color: #ff9800;
   font-weight: bold;

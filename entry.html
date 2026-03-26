@@ -65,7 +65,14 @@
 
   <!-- Data Table -->
   <div class="card" style="overflow-x: auto;">
-    <h3>All Entries</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h3 style="margin: 0;">All Entries</h3>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="exportToCSV()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #2196F3;">📤 Export</button>
+        <button onclick="document.getElementById('csv-upload').click()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #FF9800;">📥 Upload</button>
+        <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="importFromCSV(event)">
+      </div>
+    </div>
     <table id="table">
       <thead>
         <tr>
