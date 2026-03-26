@@ -1,0 +1,21 @@
+{
+  "name": "Monthly Budget Tracker",
+  "short_name": "Tracker",
+  "description": "A responsive monthly budget tracking app with automated splits and recurring due dates.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1c1c1c",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

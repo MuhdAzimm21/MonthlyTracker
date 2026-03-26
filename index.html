@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Monthly Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1c1c1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item">
+    <span>🏠</span>
+    <p>Home</p>
+  </a>
+  <a href="needs.html" class="nav-item">
+    <span>📋</span>
+    <p>Needs</p>
+  </a>
+  <a href="entry.html" class="fab">+</a>
+  <a href="savings.html" class="nav-item">
+    <span>💰</span>
+    <p>Savings</p>
+  </a>
+  <a href="wants.html" class="nav-item">
+    <span>✨</span>
+    <p>Wants</p>
+  </a>
+</div>
+
+<div class="container">
+  <h2>Financial Overview</h2>
+
+  <div class="dashboard-grid">
+    <div class="stat-card info">
+      <h3>Monthly Salary</h3>
+      <p id="dash-salary">RM 0</p>
+    </div>
+    <div class="stat-card success">
+      <h3>Total Expenses</h3>
+      <p id="dash-total">RM 0</p>
+    </div>
+    <div class="stat-card warning">
+      <h3>Due Soon</h3>
+      <p id="dash-due-soon">0 Items</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📢 Important Reminders</h3>
+    <div id="reminders-list">
+      <!-- Reminders will be injected here -->
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📈 Budget Split Status</h3>
+    <div class="split">
+      <p>Needs (60%) <span id="needs-status">RM 0 / 0</span></p>
+      <p>Wants (20%) <span id="wants-status">RM 0 / 0</span></p>
+      <p>Savings (20%) <span id="savings-status">RM 0 / 0</span></p>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+<script>
+  // Page specific logic for Dashboard
+  window.addEventListener('load', () => {
+    updateDashboard();
+  });
+</script>
+</body>
+</html>

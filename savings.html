@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Savings - Monthly Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1c1c1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item">
+    <span>🏠</span>
+    <p>Home</p>
+  </a>
+  <a href="needs.html" class="nav-item">
+    <span>📋</span>
+    <p>Needs</p>
+  </a>
+  <a href="entry.html" class="fab">+</a>
+  <a href="savings.html" class="nav-item">
+    <span>💰</span>
+    <p>Savings</p>
+  </a>
+  <a href="wants.html" class="nav-item">
+    <span>✨</span>
+    <p>Wants</p>
+  </a>
+</div>
+
+<div class="container">
+  <h2>Table of Savings</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>RM</th>
+          <th>Date Saved</th>
+          <th>Done</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="total-category" style="text-align: right; margin-top: 15px; font-weight: bold; font-size: 0.6rem;">
+      Total Savings: RM 0 /
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  window.addEventListener('load', () => {
+    renderCategory('Savings');
+  });
+</script>
+</body>
+</html>
