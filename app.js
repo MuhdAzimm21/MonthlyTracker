@@ -19,16 +19,22 @@ function checkMonthlyReset() {
   const now = new Date();
   const currentMonthYear = `${now.getMonth()}-${now.getFullYear()}`;
   
-  // If it's a new month, reset completion status and advance past dates
+  // If it's a new month, process data
   if (lastResetMonth !== currentMonthYear) {
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    data = data.map(item => {
+    // Keep only recurring items or items not yet completed (for rollover)
+    // Actually, usually one-time items should be removed to start fresh.
+    // Let's keep recurring items and clear completed one-time items.
+    data = data.filter(item => {
+      // Keep it if it's recurring OR if it was NOT completed yet
+      return item.recurring || !item.completed;
+    }).map(item => {
       let newDate = item.dueDate;
-      if (newDate) {
+      if (newDate && item.recurring) {
         const d = new Date(newDate);
-        // If the date is in the past month/year, advance it to the current month
+        // Advance past dates to the current month for recurring items
         if (d < today) {
           const monthsDiff = (today.getFullYear() - d.getFullYear()) * 12 + (today.getMonth() - d.getMonth());
           if (monthsDiff > 0) {
@@ -54,6 +60,11 @@ function toggleComplete(index) {
   const item = data[index];
   item.completed = !item.completed;
   
+  // Haptic feedback
+  if (item.completed && navigator.vibrate) {
+    navigator.vibrate(50);
+  }
+
   // Automatically update the date
   if (item.dueDate) {
     if (item.completed) {
@@ -114,6 +125,7 @@ function addItem() {
   const amount = document.getElementById("amount").value;
   const category = document.getElementById("category").value;
   const dueDate = document.getElementById("dueDate").value;
+  const recurring = document.getElementById("recurring").checked;
   const editIndex = parseInt(document.getElementById("edit-index").value);
 
   if (!desc || !amount) return alert("Please fill in Description and Amount");
@@ -123,6 +135,7 @@ function addItem() {
     amount: Number(amount), 
     category, 
     dueDate,
+    recurring,
     completed: editIndex > -1 ? data[editIndex].completed : false 
   };
 
@@ -144,6 +157,7 @@ function clearForm() {
   document.getElementById("amount").value = "";
   document.getElementById("dueDate").value = "";
   document.getElementById("category").value = "Needs";
+  document.getElementById("recurring").checked = false;
 }
 
 function deleteItem(index) {
@@ -160,6 +174,7 @@ function editItem(index) {
   document.getElementById("amount").value = item.amount;
   document.getElementById("category").value = item.category;
   document.getElementById("dueDate").value = item.dueDate || "";
+  document.getElementById("recurring").checked = item.recurring || false;
   document.getElementById("edit-index").value = index;
   document.getElementById("add-btn").textContent = "💾 Update Item";
   window.scrollTo(0, 0);
@@ -174,6 +189,47 @@ function getAutoNeedsValue() {
   return Math.max(0, needsAlloc - fixedNeedsTotal);
 }
 
+function showSkeletons(targetId) {
+  const target = document.querySelector(`${targetId} tbody`);
+  if (!target) return;
+  target.innerHTML = `
+    <tr><td colspan="5"><div class="skeleton"></div></td></tr>
+    <tr><td colspan="5"><div class="skeleton"></div></td></tr>
+    <tr><td colspan="5"><div class="skeleton"></div></td></tr>
+  `;
+}
+
+let touchstartX = 0;
+let touchendX = 0;
+
+function handleGesture(row, index) {
+  if (touchendX < touchstartX - 100) {
+    // Swipe left
+    row.style.transform = "translateX(-80px)";
+  } else if (touchendX > touchstartX + 50) {
+    // Swipe right to cancel
+    row.style.transform = "translateX(0)";
+  }
+}
+
+function attachSwipeListeners(row, index) {
+  row.classList.add('swipe-row');
+  const swipeAction = document.createElement('div');
+  swipeAction.className = 'swipe-action';
+  swipeAction.innerHTML = '❌';
+  swipeAction.onclick = () => deleteItem(index);
+  row.appendChild(swipeAction);
+
+  row.addEventListener('touchstart', e => {
+    touchstartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  row.addEventListener('touchend', e => {
+    touchendX = e.changedTouches[0].screenX;
+    handleGesture(row, index);
+  }, { passive: true });
+}
+
 function renderAll() {
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
@@ -182,35 +238,37 @@ function renderAll() {
   
   // Add Fixed Items
   data.forEach((item, index) => {
-    const row = `
-      <tr class="${item.completed ? 'completed-row' : ''}">
-        <td data-label="Description">${item.desc}</td>
-        <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
-        <td data-label="Category">${item.category}</td>
-        <td data-label="Due Date">${item.dueDate || "-"}</td>
-        <td data-label="Action">
-          <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleComplete(${index})" title="Mark as Done">
-          <button class="edit-btn" onclick="editItem(${index})">✏️</button>
-          <button class="delete-btn" onclick="deleteItem(${index})">❌</button>
-        </td>
-      </tr>
+    const tr = document.createElement('tr');
+    if (item.completed) tr.classList.add('completed-row');
+    tr.innerHTML = `
+      <td data-label="Description">${item.recurring ? '🔄 ' : ''}${item.desc}</td>
+      <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
+      <td data-label="Category">${item.category}</td>
+      <td data-label="Due Date">${item.dueDate || "-"}</td>
+      <td data-label="Action">
+        <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleComplete(${index})" title="Mark as Done">
+        <button class="edit-btn" onclick="editItem(${index})">✏️</button>
+        <button class="delete-btn" onclick="deleteItem(${index})">❌</button>
+      </td>
     `;
-    tbody.innerHTML += row;
+    attachSwipeListeners(tr, index);
+    tbody.appendChild(tr);
   });
 
   // Add Automated Needs Item
   if (salary > 0) {
     const autoValue = getAutoNeedsValue();
-    const autoRow = `
-      <tr style="background: rgba(76, 175, 80, 0.1); font-style: italic;">
-        <td data-label="Description">Foods/Snack/Groceries/Others (Auto)</td>
-        <td data-label="Amount">RM ${autoValue.toFixed(2)}</td>
-        <td data-label="Category">Needs</td>
-        <td data-label="Due Date">-</td>
-        <td data-label="Action"><small>Auto</small></td>
-      </tr>
+    const autoRow = document.createElement('tr');
+    autoRow.style.background = "rgba(76, 175, 80, 0.1)";
+    autoRow.style.fontStyle = "italic";
+    autoRow.innerHTML = `
+      <td data-label="Description">Foods/Snack/Groceries/Others (Auto)</td>
+      <td data-label="Amount">RM ${autoValue.toFixed(2)}</td>
+      <td data-label="Category">Needs</td>
+      <td data-label="Due Date">-</td>
+      <td data-label="Action"><small>Auto</small></td>
     `;
-    tbody.innerHTML += autoRow;
+    tbody.appendChild(autoRow);
   }
 
   if (data.length === 0 && salary === 0) {
@@ -232,16 +290,19 @@ function renderCategory(category) {
   data.forEach((item, index) => {
     if (item.category === category) {
       total += item.amount;
-      tbody.innerHTML += `
-        <tr class="${item.completed ? 'completed-row' : ''}">
-          <td data-label="Description">${item.desc}</td>
-          <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
-          <td data-label="Date">${item.dueDate || "-"}</td>
-          <td data-label="Done" style="text-align:center;">
-            <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleComplete(${index})" title="Mark as Done">
-          </td>
-        </tr>
+      const tr = document.createElement('tr');
+      if (item.completed) tr.classList.add('completed-row');
+      tr.innerHTML = `
+        <td data-label="Description">${item.desc}</td>
+        <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
+        <td data-label="Date">${item.dueDate || "-"}</td>
+        <td data-label="Done" style="text-align:center;">
+          <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleComplete(${index})" title="Mark as Done">
+        </td>
+      </tr>
       `;
+      attachSwipeListeners(tr, index);
+      tbody.appendChild(tr);
     }
   });
 
@@ -249,14 +310,16 @@ function renderCategory(category) {
   if (category === 'Needs' && salary > 0) {
     const autoValue = getAutoNeedsValue();
     total += autoValue;
-    tbody.innerHTML += `
-      <tr style="background: rgba(76, 175, 80, 0.1); font-style: italic;">
-        <td data-label="Description">Foods/Snack/Groceries/Others (Auto)</td>
-        <td data-label="Amount">RM ${autoValue.toFixed(2)}</td>
-        <td data-label="Date">-</td>
-        <td data-label="Done">-</td>
-      </tr>
+    const autoRow = document.createElement('tr');
+    autoRow.style.background = "rgba(76, 175, 80, 0.1)";
+    autoRow.style.fontStyle = "italic";
+    autoRow.innerHTML = `
+      <td data-label="Description">Foods/Snack/Groceries/Others (Auto)</td>
+      <td data-label="Amount">RM ${autoValue.toFixed(2)}</td>
+      <td data-label="Date">-</td>
+      <td data-label="Done">-</td>
     `;
+    tbody.appendChild(autoRow);
   }
 
   if (total === 0 && !(category === 'Needs' && salary > 0)) {
@@ -356,11 +419,23 @@ function updateDashboard() {
 
 // Initial setup
 window.addEventListener('load', () => {
+  showSkeletons("#table");
   checkMonthlyReset();
   updateActiveNav();
-  if (typeof updateDashboard === 'function' && document.getElementById("dash-salary")) {
-    updateDashboard();
-  }
+  
+  // Brief delay to simulate/show skeleton for professional feel
+  setTimeout(() => {
+    if (typeof updateDashboard === 'function' && document.getElementById("dash-salary")) {
+      updateDashboard();
+    }
+    
+    const path = window.location.pathname.split("/").pop() || "index.html";
+    if (path === "entry.html") renderAll();
+    else if (path.includes(".html")) {
+      const category = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
+      if (["Needs", "Savings", "Wants"].includes(category)) renderCategory(category);
+    }
+  }, 300);
   
   // Register Service Worker
   if ('serviceWorker' in navigator) {

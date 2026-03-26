@@ -1,9 +1,17 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: #121212;
   color: #fff;
-  margin: 0;
-  padding-bottom: 50px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Bottom Navigation */
@@ -76,6 +84,11 @@ body {
   max-width: 800px;
   margin: auto;
   padding-bottom: 100px; /* Space for bottom nav */
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 h2 {
@@ -119,7 +132,7 @@ h2 {
   font-weight: bold;
 }
 
-input, select, button {
+input:not([type="checkbox"]), select, button {
   width: 100%;
   display: block; /* Ensures they behave as full-width blocks */
   margin-top: 10px;
@@ -132,6 +145,55 @@ input, select, button {
   font-size: 16px;
   -webkit-appearance: none; /* Removes Safari default styling */
   appearance: none;
+}
+
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: #4CAF50;
+  margin: 0;
+  -webkit-appearance: checkbox;
+  appearance: checkbox;
+}
+
+/* Swipe-to-delete styles */
+.swipe-row {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  transition: transform 0.2s ease-out;
+}
+
+.swipe-action {
+  position: absolute;
+  right: -80px;
+  top: 0;
+  height: 100%;
+  width: 80px;
+  background: #f44336;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  transition: right 0.2s ease-out;
+  z-index: 1;
+}
+
+/* Skeleton Loader */
+.skeleton {
+  background: linear-gradient(90deg, #252525 25%, #333 50%, #252525 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+  height: 20px;
+  margin: 10px 0;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Ensure date inputs show the picker icon and behave correctly */
