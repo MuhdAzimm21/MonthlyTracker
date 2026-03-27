@@ -12,6 +12,16 @@ body {
   color: #fff;
   display: flex;
   flex-direction: column;
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar,
+.container::-webkit-scrollbar,
+div::-webkit-scrollbar {
+  display: none;
 }
 
 /* Bottom Navigation */
@@ -160,14 +170,15 @@ input[type="checkbox"] {
 /* Swipe-to-delete styles */
 .swipe-row {
   position: relative;
-  /* overflow: hidden; Removed to allow button to be visible when row is transformed */
   touch-action: pan-y;
-  transition: transform 0.2s ease-out;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #252525; /* Ensure row has background to cover button */
+  z-index: 1;
 }
 
 .swipe-action {
   position: absolute;
-  right: -80px; /* Positioned outside the row */
+  right: 0; /* Align to the right edge of the row */
   top: 0;
   height: 100%;
   width: 80px;
@@ -177,9 +188,11 @@ input[type="checkbox"] {
   color: white;
   font-weight: bold;
   opacity: 0;
-  transition: opacity 0.2s ease-out;
+  /* Counter-transform: move button 80px right so it stays at table edge when row moves 80px left */
+  transform: translateX(80px) scale(0.8); 
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.05s ease-out;
   pointer-events: none;
-  z-index: 5;
+  z-index: -1; /* Place behind the row content */
   border-radius: 0 8px 8px 0;
 }
 
@@ -195,22 +208,12 @@ input[type="checkbox"] {
   background: #FF9800;
 }
 
-.delete-action:active {
-  background: #d32f2f;
-}
-
-.done-action:active {
-  background: #388E3C;
-}
-
-.undo-action:active {
-  background: #F57C00;
-}
-
-/* When the row is transformed left, the button becomes interactive */
+/* When revealed: row moves left -80px, button moves to 0 (which is fixed relative to table) */
 .swipe-row[style*="translateX(-80px)"] .swipe-action {
   pointer-events: auto;
   opacity: 1;
+  transform: translateX(80px) scale(1); /* Stays at the edge */
+  z-index: 5; /* Bring to front only when revealed */
 }
 
 /* Skeleton Loader */
@@ -395,8 +398,16 @@ table {
 }
 
 .completed-row {
-  opacity: 0.5;
+  opacity: 0.6;
+}
+
+.completed-row td:not([data-label="Action"]) {
   text-decoration: line-through;
+}
+
+.completed-row button, 
+.completed-row .swipe-action {
+  text-decoration: none !important;
 }
 
 input[type="checkbox"] {

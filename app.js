@@ -335,12 +335,15 @@ function renderCategory(category) {
   if (!tbody) return;
 
   tbody.innerHTML = "";
-  let total = 0;
+  let totalAmount = 0;
+  let completedAmount = 0;
 
   // Add fixed items
   data.forEach((item, index) => {
     if (item.category === category) {
-      total += item.amount;
+      totalAmount += item.amount;
+      if (item.completed) completedAmount += item.amount;
+      
       const tr = document.createElement('tr');
       if (item.completed) tr.classList.add('completed-row');
       tr.innerHTML = `
@@ -356,7 +359,8 @@ function renderCategory(category) {
   // Add Auto item if category is Needs
   if (category === 'Needs' && salary > 0) {
     const autoValue = getAutoNeedsValue();
-    total += autoValue;
+    totalAmount += autoValue;
+    // Auto value is considered uncompleted/ongoing
     const autoRow = document.createElement('tr');
     autoRow.style.background = "rgba(76, 175, 80, 0.1)";
     autoRow.style.fontStyle = "italic";
@@ -368,19 +372,15 @@ function renderCategory(category) {
     tbody.appendChild(autoRow);
   }
 
-  if (total === 0 && !(category === 'Needs' && salary > 0)) {
+  const remainingAmount = totalAmount - completedAmount;
+
+  if (totalAmount === 0 && !(category === 'Needs' && salary > 0)) {
     tbody.innerHTML = `<tr><td colspan="3" class="no-data">No ${category} found.</td></tr>`;
   }
 
   const totalEl = document.getElementById("total-category");
   if (totalEl) {
-    const { needsAlloc, wantsAlloc, savingsAlloc } = calculateSplit();
-    let allocated = 0;
-    if (category === 'Needs') allocated = needsAlloc;
-    if (category === 'Wants') allocated = wantsAlloc;
-    if (category === 'Savings') allocated = savingsAlloc;
-    
-    totalEl.textContent = `Total ${category}: RM ${total.toFixed(2)} / RM ${allocated}`;
+    totalEl.textContent = `Total ${category}: RM ${remainingAmount.toFixed(2)} / RM ${totalAmount.toFixed(2)}`;
   }
 }
 
