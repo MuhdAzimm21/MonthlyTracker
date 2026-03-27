@@ -9,7 +9,6 @@
 // 1. STATE MANAGEMENT
 // ==========================================
 
-// Global application state retrieved from LocalStorage
 let data = JSON.parse(localStorage.getItem("budgetData")) || [];
 let salary = Number(localStorage.getItem("monthlySalary")) || 0;
 let lastResetMonth = localStorage.getItem("lastResetMonth") || "";
@@ -17,14 +16,10 @@ let budgetRule = localStorage.getItem("budgetRule") || "622";
 let salaryConfirmed = localStorage.getItem("salaryConfirmed") === "true";
 let ruleSelected = localStorage.getItem("ruleSelected") === "true";
 
-// Global tracker for opened swipe row
 let openedRow = null;
 let touchstartX = 0;
 let touchendX = 0;
 
-/**
- * Saves current state to LocalStorage
- */
 function saveData() {
   localStorage.setItem("budgetData", JSON.stringify(data));
   localStorage.setItem("monthlySalary", salary);
@@ -37,9 +32,6 @@ function saveData() {
 // 2. BUDGET SETUP & RULES
 // ==========================================
 
-/**
- * Validates and locks the salary input
- */
 function confirmSalary() {
   const salaryInput = document.getElementById("salary");
   const val = Number(salaryInput.value);
@@ -49,88 +41,66 @@ function confirmSalary() {
     salaryConfirmed = true;
     saveData();
     syncSetupUI();
+    Popup.toast("Salary confirmed!");
   } else {
-    alert("Please enter a valid monthly income.");
+    Popup.alert("Invalid Input", "Please enter a valid monthly income.", "⚠️");
   }
 }
 
-/**
- * Unlocks the salary input for editing
- */
 function editSalary() {
   salaryConfirmed = false;
-  ruleSelected = false; // Reset rule selection too if editing income
+  ruleSelected = false; 
   saveData();
   syncSetupUI();
 }
 
-/**
- * Syncs the Setup Card UI and Page Locking
- */
 function syncSetupUI() {
   const stepSalary = document.getElementById("step-salary");
   const stepRule = document.getElementById("step-rule");
   const summary = document.getElementById("setup-summary");
   const title = document.getElementById("setup-title");
-  
-  // Elements to lock/unlock
   const editCard = document.getElementById("edit-form-card");
   const dataCard = document.getElementById("data-table-card");
 
-  if (!stepSalary) return; // Not on entry page
+  if (!stepSalary) return;
 
   if (!salaryConfirmed) {
-    // Step 1: Entry
     stepSalary.style.display = "block";
     stepRule.style.display = "none";
     summary.style.display = "none";
     title.textContent = "Step 1: Monthly Income";
-    
     if (editCard) { editCard.style.opacity = "0.5"; editCard.style.pointerEvents = "none"; }
     if (dataCard) { dataCard.style.opacity = "0.5"; dataCard.style.pointerEvents = "none"; }
-    
     document.getElementById("salary").value = salary || "";
   } else if (!ruleSelected) {
-    // Step 2: Rule Selection
     stepSalary.style.display = "none";
     stepRule.style.display = "block";
     summary.style.display = "none";
     title.textContent = "Step 2: Budgeting Rule";
-    
     if (editCard) { editCard.style.opacity = "0.5"; editCard.style.pointerEvents = "none"; }
     if (dataCard) { dataCard.style.opacity = "0.5"; dataCard.style.pointerEvents = "none"; }
   } else {
-    // Fully Complete
     stepSalary.style.display = "none";
     stepRule.style.display = "none";
     summary.style.display = "block";
     title.textContent = "Budgeting Setup";
-    
     if (editCard) { editCard.style.opacity = "1"; editCard.style.pointerEvents = "auto"; }
     if (dataCard) { dataCard.style.opacity = "1"; dataCard.style.pointerEvents = "auto"; }
-    
     calculateSplit();
   }
 }
 
-/**
- * Updates the active budget rule (6/2/2 or 7/2/1)
- */
 function setBudgetRule(rule) {
   budgetRule = rule;
   ruleSelected = true;
   saveData();
   syncSetupUI();
   calculateSplit();
+  Popup.toast(`Rule ${rule.split('').join('/')} activated!`);
 }
 
-/**
- * Returns decimal multipliers based on active rule
- */
 function getRulePercentages() {
-  if (budgetRule === '721') {
-    return { needs: 0.7, savings: 0.2, wants: 0.1 };
-  }
+  if (budgetRule === '721') return { needs: 0.7, savings: 0.2, wants: 0.1 };
   return { needs: 0.6, savings: 0.2, wants: 0.2 };
 }
 
@@ -181,7 +151,7 @@ function addItem() {
   const recurring = document.getElementById("recurring").checked;
   const editIndex = parseInt(document.getElementById("edit-index").value);
 
-  if (!desc || !amount) return alert("Please fill in Description and Amount");
+  if (!desc || !amount) return Popup.toast("Please fill in Description and Amount", "warning");
 
   const percs = getRulePercentages();
   const limit = salary * percs[category.toLowerCase()];
@@ -190,7 +160,7 @@ function addItem() {
     .reduce((sum, item) => sum + item.amount, 0);
 
   if (currentTotal + amount > limit) {
-    return alert(`🚨 Budget Exceeded! Limit for ${category} is RM ${limit.toFixed(2)}.`);
+    return Popup.alert("Budget Exceeded", `Limit for ${category} is RM ${limit.toFixed(2)}. This entry would bring you to RM ${(currentTotal + amount).toFixed(2)}.`, "🚨");
   }
 
   const newItem = { desc, amount, category, dueDate, recurring, completed: editIndex > -1 ? data[editIndex].completed : false };
@@ -198,10 +168,12 @@ function addItem() {
     data[editIndex] = newItem;
     document.getElementById("edit-index").value = "-1";
     document.getElementById("add-btn").textContent = "➕ Add Item";
+    Popup.toast("Item updated!");
   } else {
     data.push(newItem);
+    Popup.toast("Item added!");
   }
-  saveData(); clearForm(); renderAll();
+  saveData(); clearForm(); renderAll(); calculateSplit();
 }
 
 function editItem(index) {
@@ -218,9 +190,14 @@ function editItem(index) {
   else window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function deleteItem(index) {
-  if (confirm("Are you sure you want to delete this item?")) {
-    data.splice(index, 1); saveData(); renderAll();
+async function deleteItem(index) {
+  const confirmed = await Popup.confirm("Delete Item", "Are you sure you want to remove this entry?");
+  if (confirmed) {
+    data.splice(index, 1); 
+    saveData(); 
+    renderAll(); 
+    calculateSplit();
+    Popup.toast("Item deleted", "error");
   }
 }
 
@@ -232,6 +209,12 @@ function toggleComplete(index) {
     item.dueDate = advanceDate(item.dueDate, item.completed ? 1 : -1);
   }
   saveData();
+  
+  Popup.toast(
+    item.completed ? "Marked as Done" : "Marked as Pending",
+    item.completed ? "success" : "warning"
+  );
+  
   const path = window.location.pathname.split("/").pop() || "index.html";
   if (path === "entry.html") renderAll();
   else if (path.includes(".html")) {
@@ -403,7 +386,6 @@ function calculateSplit() {
     if (currentTotals.hasOwnProperty(cat)) currentTotals[cat] += item.amount;
   });
   
-  // Add Auto Needs to the needs total for visualization
   if (salary > 0) currentTotals.needs += getAutoNeedsValue();
 
   const updateDisplay = (id, percId, alloc, total) => {
@@ -425,7 +407,6 @@ function calculateSplit() {
   updateDisplay("wants", "perc-wants", limits.wants, currentTotals.wants);
   updateDisplay("savings", "perc-savings", limits.savings, currentTotals.savings);
   
-  // Highlight active button
   const btn622 = document.getElementById('rule-622');
   const btn721 = document.getElementById('rule-721');
   if (btn622 && btn721) {
@@ -459,24 +440,24 @@ function updateActiveNav() {
 }
 
 function exportToCSV() {
-  if (data.length === 0) return alert("No data");
+  if (data.length === 0) return Popup.toast("No data to export", "warning");
   const headers = ["Description", "Amount", "Category", "DueDate", "Completed"];
   const csv = [headers.join(","), ...data.map(item => [`"${item.desc}"`, item.amount, item.category, item.dueDate || "", item.completed ? "TRUE" : "FALSE"].join(","))].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a"); link.href = url; link.download = "budget.csv"; link.click();
+  const link = document.createElement("a"); link.href = url; link.download = `budget_${new Date().toISOString().split('T')[0]}.csv`; link.click();
+  Popup.toast("Data exported successfully");
 }
 
 function importFromCSV(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     const lines = e.target.result.split(/\r?\n/);
     const importedData = [];
     const totals = { needs: 0, wants: 0, savings: 0 };
     
-    // Calculate current totals
     data.forEach(item => {
       const cat = item.category.toLowerCase();
       if (totals.hasOwnProperty(cat)) totals[cat] += item.amount;
@@ -501,26 +482,19 @@ function importFromCSV(event) {
       }
     }
 
-    // Budget Check
     const percs = getRulePercentages();
-    const limits = {
-      needs: salary * percs.needs,
-      wants: salary * percs.wants,
-      savings: salary * percs.savings
-    };
+    const limits = { needs: salary * percs.needs, wants: salary * percs.wants, savings: salary * percs.savings };
 
     let overBudgetMsg = "";
     for (const cat in limits) {
       if (totals[cat] > limits[cat]) {
-        overBudgetMsg += `\n- ${cat.charAt(0).toUpperCase() + cat.slice(1)}: RM ${totals[cat].toFixed(2)} (Limit: RM ${limits[cat].toFixed(2)})`;
+        overBudgetMsg += `<br>• ${cat.charAt(0).toUpperCase() + cat.slice(1)}: RM ${totals[cat].toFixed(2)} (Limit: RM ${limits[cat].toFixed(2)})`;
       }
     }
 
     if (overBudgetMsg) {
-      if (!confirm(`⚠️ Warning: Importing this data will exceed your budget for the following categories:${overBudgetMsg}\n\nDo you want to proceed anyway?`)) {
-        event.target.value = "";
-        return;
-      }
+      const confirmed = await Popup.confirm("Budget Warning", `Importing this data will exceed your budget for:${overBudgetMsg}<br><br>Do you want to proceed?`, "⚠️");
+      if (!confirmed) { event.target.value = ""; return; }
     }
 
     if (importedData.length > 0) {
@@ -528,7 +502,7 @@ function importFromCSV(event) {
       saveData();
       renderAll();
       calculateSplit();
-      alert("Data imported successfully.");
+      Popup.alert("Import Success", `Successfully imported ${importedData.length} items.`, "✅");
     }
     event.target.value = "";
   };
@@ -539,7 +513,6 @@ function importFromCSV(event) {
 // 8. INITIALIZATION
 // ==========================================
 
-// Global touch listener for closing swipe rows
 document.addEventListener('touchstart', (e) => {
   if (openedRow && !openedRow.contains(e.target)) resetOpenedRow();
 }, { passive: true });
