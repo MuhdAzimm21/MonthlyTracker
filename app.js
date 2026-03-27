@@ -202,23 +202,75 @@ function showSkeletons(targetId) {
 let touchstartX = 0;
 let touchendX = 0;
 
+// Global tracker for opened swipe row
+let openedRow = null;
+
+// Close opened row when clicking elsewhere
+document.addEventListener('touchstart', (e) => {
+  if (openedRow && !openedRow.contains(e.target)) {
+    resetOpenedRow();
+  }
+}, { passive: true });
+
+function resetOpenedRow() {
+  if (openedRow) {
+    openedRow.style.transform = "translateX(0)";
+    const action = openedRow.querySelector('.swipe-action');
+    if (action) action.style.opacity = "0";
+    openedRow = null;
+  }
+}
+
 function handleGesture(row, index) {
-  if (touchendX < touchstartX - 100) {
-    // Swipe left
+  const swipeAction = row.querySelector('.swipe-action');
+  if (!swipeAction) return;
+
+  if (touchendX < touchstartX - 70) {
+    // If another row is open, close it first
+    if (openedRow && openedRow !== row) resetOpenedRow();
+
+    // Swipe left - reveal action
     row.style.transform = "translateX(-80px)";
+    swipeAction.style.opacity = "1";
+    openedRow = row;
   } else if (touchendX > touchstartX + 50) {
-    // Swipe right to cancel
+    // Swipe right - cancel
     row.style.transform = "translateX(0)";
+    swipeAction.style.opacity = "0";
+    if (openedRow === row) openedRow = null;
   }
 }
 
 function attachSwipeListeners(row, index) {
   row.classList.add('swipe-row');
-  const swipeAction = document.createElement('div');
-  swipeAction.className = 'swipe-action';
-  swipeAction.innerHTML = '❌';
-  swipeAction.onclick = () => deleteItem(index);
-  row.appendChild(swipeAction);
+  
+  const path = window.location.pathname.split("/").pop() || "index.html";
+  const isEntryPage = path === "entry.html";
+  const isCategoryPage = ["needs.html", "savings.html", "wants.html"].includes(path);
+
+  if (isEntryPage || isCategoryPage) {
+    const swipeAction = document.createElement('div');
+    swipeAction.className = 'swipe-action';
+    
+    if (isEntryPage) {
+      swipeAction.innerHTML = '❌';
+      swipeAction.classList.add('delete-action');
+      swipeAction.onclick = (e) => {
+        e.stopPropagation();
+        deleteItem(index);
+      };
+    } else {
+      const isCompleted = data[index].completed;
+      swipeAction.innerHTML = isCompleted ? '↩️' : '✅';
+      swipeAction.className = `swipe-action ${isCompleted ? 'undo-action' : 'done-action'}`;
+      swipeAction.onclick = (e) => {
+        e.stopPropagation();
+        toggleComplete(index);
+        resetOpenedRow();
+      };
+    }
+    row.appendChild(swipeAction);
+  }
 
   row.addEventListener('touchstart', e => {
     touchstartX = e.changedTouches[0].screenX;
@@ -246,9 +298,8 @@ function renderAll() {
       <td data-label="Category">${item.category}</td>
       <td data-label="Due Date">${item.dueDate || "-"}</td>
       <td data-label="Action">
-        <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleComplete(${index})" title="Mark as Done">
         <button class="edit-btn" onclick="editItem(${index})">✏️</button>
-        <button class="delete-btn" onclick="deleteItem(${index})">❌</button>
+        <button class="delete-btn" onclick="deleteItem(${index})" style="display:none;">❌</button>
       </td>
     `;
     attachSwipeListeners(tr, index);
@@ -296,10 +347,6 @@ function renderCategory(category) {
         <td data-label="Description">${item.desc}</td>
         <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
         <td data-label="Date">${item.dueDate || "-"}</td>
-        <td data-label="Done" style="text-align:center;">
-          <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleComplete(${index})" title="Mark as Done">
-        </td>
-      </tr>
       `;
       attachSwipeListeners(tr, index);
       tbody.appendChild(tr);
@@ -317,13 +364,12 @@ function renderCategory(category) {
       <td data-label="Description">Foods/Snack/Groceries/Others (Auto)</td>
       <td data-label="Amount">RM ${autoValue.toFixed(2)}</td>
       <td data-label="Date">-</td>
-      <td data-label="Done">-</td>
     `;
     tbody.appendChild(autoRow);
   }
 
   if (total === 0 && !(category === 'Needs' && salary > 0)) {
-    tbody.innerHTML = `<tr><td colspan="4" class="no-data">No ${category} found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" class="no-data">No ${category} found.</td></tr>`;
   }
 
   const totalEl = document.getElementById("total-category");
