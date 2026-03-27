@@ -216,6 +216,59 @@ input[type="checkbox"] {
   z-index: 5; /* Bring to front only when revealed */
 }
 
+/* Filter Bar Styles */
+.filter-wrapper {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #888;
+  text-transform: uppercase;
+  margin-left: 5px;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+  scrollbar-width: none; /* Firefox */
+}
+
+.filter-pills::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.pill {
+  background: #252525;
+  color: #aaa;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.6rem;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid #333;
+  transition: all 0.2s ease;
+}
+
+.pill.active {
+  background: #4CAF50;
+  color: #000;
+  border-color: #4CAF50;
+  font-weight: bold;
+}
+
 /* Skeleton Loader */
 .skeleton {
   background: linear-gradient(90deg, #252525 25%, #333 50%, #252525 75%);

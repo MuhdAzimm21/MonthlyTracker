@@ -235,11 +235,50 @@ function clearForm() {
 // 5. RENDERING LOGIC
 // ==========================================
 
+let currentCategoryFilter = "All";
+let currentTimeFilter = "All";
+let showAllInCategory = false;
+
+/**
+ * Renders the full list of entries on entry.html with filters
+ */
 function renderAll() {
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
+
   tbody.innerHTML = "";
-  data.forEach((item, index) => {
+  
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const filteredData = data.filter(item => {
+    // Category Filter
+    const catMatch = currentCategoryFilter === "All" || item.category === currentCategoryFilter;
+    
+    // Time Filter
+    let timeMatch = true;
+    if (currentTimeFilter !== "All" && item.dueDate) {
+      const itemDate = new Date(item.dueDate);
+      if (currentTimeFilter === "Week") {
+        timeMatch = itemDate >= startOfWeek;
+      } else if (currentTimeFilter === "Month") {
+        timeMatch = itemDate >= startOfMonth;
+      }
+    } else if (currentTimeFilter !== "All" && !item.dueDate) {
+      timeMatch = false; // Items without dates are hidden when time filter is active
+    }
+    
+    return catMatch && timeMatch;
+  });
+
+  filteredData.forEach((item, index) => {
+    // Find original index for actions
+    const originalIndex = data.indexOf(item);
     const tr = document.createElement('tr');
     if (item.completed) tr.classList.add('completed-row');
     tr.innerHTML = `
@@ -248,14 +287,15 @@ function renderAll() {
       <td data-label="Category">${item.category}</td>
       <td data-label="Due Date">${item.dueDate || "-"}</td>
       <td data-label="Action">
-        <button class="edit-btn" onclick="editItem(${index})">✏️</button>
-        <button class="delete-btn" onclick="deleteItem(${index})" style="display:none;">❌</button>
+        <button class="edit-btn" onclick="editItem(${originalIndex})">✏️</button>
+        <button class="delete-btn" onclick="deleteItem(${originalIndex})" style="display:none;">❌</button>
       </td>
     `;
-    attachSwipeListeners(tr, index);
+    attachSwipeListeners(tr, originalIndex);
     tbody.appendChild(tr);
   });
-  if (salary > 0) {
+
+  if (salary > 0 && (currentCategoryFilter === "All" || currentCategoryFilter === "Needs")) {
     const autoValue = getAutoNeedsValue();
     const autoRow = document.createElement('tr');
     autoRow.style.background = "rgba(76, 175, 80, 0.1)";
@@ -263,24 +303,36 @@ function renderAll() {
     autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">RM ${autoValue.toFixed(2)}</td><td data-label="Category">Needs</td><td data-label="Due Date">-</td><td data-label="Action"><small>Auto</small></td>`;
     tbody.appendChild(autoRow);
   }
+
+  if (filteredData.length === 0 && (salary === 0 || currentCategoryFilter !== "Needs")) {
+    tbody.innerHTML = '<tr><td colspan="5" class="no-data">No matching entries found.</td></tr>';
+  }
 }
 
+/**
+ * Renders category-specific view (needs, wants, savings)
+ */
 function renderCategory(category) {
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
+
   tbody.innerHTML = "";
   let totalAmount = 0, completedAmount = 0;
-  data.forEach((item, index) => {
-    if (item.category === category) {
-      totalAmount += item.amount;
-      if (item.completed) completedAmount += item.amount;
-      const tr = document.createElement('tr');
-      if (item.completed) tr.classList.add('completed-row');
-      tr.innerHTML = `<td data-label="Description">${item.desc}</td><td data-label="Amount">RM ${item.amount.toFixed(2)}</td><td data-label="Date">${item.dueDate || "-"}</td>`;
-      attachSwipeListeners(tr, index);
-      tbody.appendChild(tr);
-    }
+  
+  const categoryItems = data.filter(item => item.category === category);
+  
+  categoryItems.forEach((item) => {
+    totalAmount += item.amount;
+    if (item.completed) completedAmount += item.amount;
+    
+    const originalIndex = data.indexOf(item);
+    const tr = document.createElement('tr');
+    if (item.completed) tr.classList.add('completed-row');
+    tr.innerHTML = `<td data-label="Description">${item.desc}</td><td data-label="Amount">RM ${item.amount.toFixed(2)}</td><td data-label="Date">${item.dueDate || "-"}</td>`;
+    attachSwipeListeners(tr, originalIndex);
+    tbody.appendChild(tr);
   });
+
   if (category === 'Needs' && salary > 0) {
     const autoValue = getAutoNeedsValue(); totalAmount += autoValue;
     const autoRow = document.createElement('tr');
@@ -290,6 +342,32 @@ function renderCategory(category) {
   }
   const totalEl = document.getElementById("total-category");
   if (totalEl) totalEl.textContent = `Total ${category}: RM ${(totalAmount - completedAmount).toFixed(2)} / RM ${totalAmount.toFixed(2)}`;
+}
+
+/**
+ * Initializes Filter Pills logic
+ */
+function initFilters() {
+  const catPills = document.querySelectorAll("#filter-category .pill");
+  const timePills = document.querySelectorAll("#filter-time .pill");
+
+  catPills.forEach(pill => {
+    pill.onclick = () => {
+      catPills.forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentCategoryFilter = pill.dataset.value;
+      renderAll();
+    };
+  });
+
+  timePills.forEach(pill => {
+    pill.onclick = () => {
+      timePills.forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentTimeFilter = pill.dataset.value;
+      renderAll();
+    };
+  });
 }
 
 function updateDashboard() {
@@ -525,7 +603,11 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     const path = window.location.pathname.split("/").pop() || "index.html";
     if (path === "index.html") updateDashboard();
-    else if (path === "entry.html") { syncSetupUI(); renderAll(); }
+    else if (path === "entry.html") { 
+      syncSetupUI(); 
+      renderAll(); 
+      initFilters();
+    }
     else if (path.includes(".html")) {
       const cat = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
       if (["Needs", "Savings", "Wants"].includes(cat)) renderCategory(cat);

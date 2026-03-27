@@ -101,7 +101,7 @@
 
   <!-- Data Table -->
   <div class="card" id="data-table-card" style="opacity: 0.5; pointer-events: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <h3 style="margin: 0;">All Entries</h3>
       <div style="display: flex; gap: 8px;">
         <button onclick="exportToCSV()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #2196F3;">📤 Export</button>
@@ -109,6 +109,28 @@
         <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="importFromCSV(event)">
       </div>
     </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-wrapper">
+      <div class="filter-group">
+        <label>Category</label>
+        <div class="filter-pills" id="filter-category">
+          <div class="pill active" data-value="All">All</div>
+          <div class="pill" data-value="Needs">Needs</div>
+          <div class="pill" data-value="Wants">Wants</div>
+          <div class="pill" data-value="Savings">Savings</div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Timeframe</label>
+        <div class="filter-pills" id="filter-time">
+          <div class="pill active" data-value="All">All</div>
+          <div class="pill" data-value="Week">This Week</div>
+          <div class="pill" data-value="Month">This Month</div>
+        </div>
+      </div>
+    </div>
+
     <table id="table">
       <thead>
         <tr>
