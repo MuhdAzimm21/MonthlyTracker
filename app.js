@@ -1,128 +1,181 @@
-// Data Management
+/**
+ * MONTHLY TRACKER - Core Application Logic
+ * 
+ * This file manages data persistence, financial calculations, 
+ * UI rendering, and gesture interactions.
+ */
+
+// ==========================================
+// 1. STATE MANAGEMENT
+// ==========================================
+
+// Global application state retrieved from LocalStorage
 let data = JSON.parse(localStorage.getItem("budgetData")) || [];
 let salary = Number(localStorage.getItem("monthlySalary")) || 0;
 let lastResetMonth = localStorage.getItem("lastResetMonth") || "";
+let budgetRule = localStorage.getItem("budgetRule") || "622"; 
+let salaryConfirmed = localStorage.getItem("salaryConfirmed") === "true";
+let ruleSelected = localStorage.getItem("ruleSelected") === "true";
+
+// Global tracker for opened swipe row
+let openedRow = null;
+let touchstartX = 0;
+let touchendX = 0;
+
+/**
+ * Saves current state to LocalStorage
+ */
+function saveData() {
+  localStorage.setItem("budgetData", JSON.stringify(data));
+  localStorage.setItem("monthlySalary", salary);
+  localStorage.setItem("budgetRule", budgetRule);
+  localStorage.setItem("salaryConfirmed", salaryConfirmed);
+  localStorage.setItem("ruleSelected", ruleSelected);
+}
+
+// ==========================================
+// 2. BUDGET SETUP & RULES
+// ==========================================
+
+/**
+ * Validates and locks the salary input
+ */
+function confirmSalary() {
+  const salaryInput = document.getElementById("salary");
+  const val = Number(salaryInput.value);
+  
+  if (val > 0) {
+    salary = val;
+    salaryConfirmed = true;
+    saveData();
+    syncSetupUI();
+  } else {
+    alert("Please enter a valid monthly income.");
+  }
+}
+
+/**
+ * Unlocks the salary input for editing
+ */
+function editSalary() {
+  salaryConfirmed = false;
+  ruleSelected = false; // Reset rule selection too if editing income
+  saveData();
+  syncSetupUI();
+}
+
+/**
+ * Syncs the Setup Card UI and Page Locking
+ */
+function syncSetupUI() {
+  const stepSalary = document.getElementById("step-salary");
+  const stepRule = document.getElementById("step-rule");
+  const summary = document.getElementById("setup-summary");
+  const title = document.getElementById("setup-title");
+  
+  // Elements to lock/unlock
+  const editCard = document.getElementById("edit-form-card");
+  const dataCard = document.getElementById("data-table-card");
+
+  if (!stepSalary) return; // Not on entry page
+
+  if (!salaryConfirmed) {
+    // Step 1: Entry
+    stepSalary.style.display = "block";
+    stepRule.style.display = "none";
+    summary.style.display = "none";
+    title.textContent = "Step 1: Monthly Income";
+    
+    if (editCard) { editCard.style.opacity = "0.5"; editCard.style.pointerEvents = "none"; }
+    if (dataCard) { dataCard.style.opacity = "0.5"; dataCard.style.pointerEvents = "none"; }
+    
+    document.getElementById("salary").value = salary || "";
+  } else if (!ruleSelected) {
+    // Step 2: Rule Selection
+    stepSalary.style.display = "none";
+    stepRule.style.display = "block";
+    summary.style.display = "none";
+    title.textContent = "Step 2: Budgeting Rule";
+    
+    if (editCard) { editCard.style.opacity = "0.5"; editCard.style.pointerEvents = "none"; }
+    if (dataCard) { dataCard.style.opacity = "0.5"; dataCard.style.pointerEvents = "none"; }
+  } else {
+    // Fully Complete
+    stepSalary.style.display = "none";
+    stepRule.style.display = "none";
+    summary.style.display = "block";
+    title.textContent = "Budgeting Setup";
+    
+    if (editCard) { editCard.style.opacity = "1"; editCard.style.pointerEvents = "auto"; }
+    if (dataCard) { dataCard.style.opacity = "1"; dataCard.style.pointerEvents = "auto"; }
+    
+    calculateSplit();
+  }
+}
+
+/**
+ * Updates the active budget rule (6/2/2 or 7/2/1)
+ */
+function setBudgetRule(rule) {
+  budgetRule = rule;
+  ruleSelected = true;
+  saveData();
+  syncSetupUI();
+  calculateSplit();
+}
+
+/**
+ * Returns decimal multipliers based on active rule
+ */
+function getRulePercentages() {
+  if (budgetRule === '721') {
+    return { needs: 0.7, savings: 0.2, wants: 0.1 };
+  }
+  return { needs: 0.6, savings: 0.2, wants: 0.2 };
+}
+
+// ==========================================
+// 3. DATE UTILITIES & AUTO-RESET
+// ==========================================
 
 function advanceDate(dateStr, months) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   const day = d.getDate();
   d.setMonth(d.getMonth() + months);
-  // Handle month overflow (e.g., Jan 31 -> Feb 28)
-  if (d.getDate() !== day) {
-    d.setDate(0);
-  }
+  if (d.getDate() !== day) d.setDate(0);
   return d.toISOString().split('T')[0];
 }
 
 function checkMonthlyReset() {
   const now = new Date();
   const currentMonthYear = `${now.getMonth()}-${now.getFullYear()}`;
-  
-  // If it's a new month, process data
   if (lastResetMonth !== currentMonthYear) {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    // Keep only recurring items or items not yet completed (for rollover)
-    // Actually, usually one-time items should be removed to start fresh.
-    // Let's keep recurring items and clear completed one-time items.
-    data = data.filter(item => {
-      // Keep it if it's recurring OR if it was NOT completed yet
-      return item.recurring || !item.completed;
-    }).map(item => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    data = data.filter(item => item.recurring || !item.completed).map(item => {
       let newDate = item.dueDate;
       if (newDate && item.recurring) {
         const d = new Date(newDate);
-        // Advance past dates to the current month for recurring items
         if (d < today) {
           const monthsDiff = (today.getFullYear() - d.getFullYear()) * 12 + (today.getMonth() - d.getMonth());
-          if (monthsDiff > 0) {
-            newDate = advanceDate(newDate, monthsDiff);
-          }
+          if (monthsDiff > 0) newDate = advanceDate(newDate, monthsDiff);
         }
       }
       return { ...item, completed: false, dueDate: newDate };
     });
-
     lastResetMonth = currentMonthYear;
     localStorage.setItem("lastResetMonth", lastResetMonth);
     saveData();
   }
 }
 
-function saveData() {
-  localStorage.setItem("budgetData", JSON.stringify(data));
-  localStorage.setItem("monthlySalary", salary);
-}
+// ==========================================
+// 4. CORE DATA LOGIC (ADD, EDIT, DELETE)
+// ==========================================
 
-function toggleComplete(index) {
-  const item = data[index];
-  item.completed = !item.completed;
-  
-  // Haptic feedback
-  if (item.completed && navigator.vibrate) {
-    navigator.vibrate(50);
-  }
-
-  // Automatically update the date
-  if (item.dueDate) {
-    if (item.completed) {
-      // Advance to next month
-      item.dueDate = advanceDate(item.dueDate, 1);
-    } else {
-      // Revert to previous month
-      item.dueDate = advanceDate(item.dueDate, -1);
-    }
-  }
-
-  saveData();
-  
-  // Refresh based on current page
-  const path = window.location.pathname.split("/").pop() || "index.html";
-  if (path === "entry.html") renderAll();
-  else if (path.includes(".html")) {
-    const category = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
-    if (["Needs", "Savings", "Wants"].includes(category)) renderCategory(category);
-  }
-}
-
-// Navigation
-function updateActiveNav() {
-  const path = window.location.pathname.split("/").pop() || "index.html";
-  document.querySelectorAll(".nav-item").forEach(item => {
-    const href = item.getAttribute("href");
-    if (href === path) {
-      item.classList.add("active");
-    } else {
-      item.classList.remove("active");
-    }
-  });
-}
-
-// Global calculations
-function calculateSplit() {
-  const salaryInput = document.getElementById("salary");
-  if (salaryInput) {
-    salary = Number(salaryInput.value) || 0;
-    saveData();
-  }
-  
-  const needsAlloc = (salary * 0.6).toFixed(2);
-  const wantsAlloc = (salary * 0.2).toFixed(2);
-  const savingsAlloc = (salary * 0.2).toFixed(2);
-
-  if (document.getElementById("needs")) document.getElementById("needs").textContent = `RM ${needsAlloc}`;
-  if (document.getElementById("wants")) document.getElementById("wants").textContent = `RM ${wantsAlloc}`;
-  if (document.getElementById("savings")) document.getElementById("savings").textContent = `RM ${savingsAlloc}`;
-
-  return { needsAlloc, wantsAlloc, savingsAlloc };
-}
-
-// Add / Edit Logic
 function addItem() {
   const desc = document.getElementById("desc").value;
-  const amount = document.getElementById("amount").value;
+  const amount = Number(document.getElementById("amount").value);
   const category = document.getElementById("category").value;
   const dueDate = document.getElementById("dueDate").value;
   const recurring = document.getElementById("recurring").checked;
@@ -130,15 +183,17 @@ function addItem() {
 
   if (!desc || !amount) return alert("Please fill in Description and Amount");
 
-  const newItem = { 
-    desc, 
-    amount: Number(amount), 
-    category, 
-    dueDate,
-    recurring,
-    completed: editIndex > -1 ? data[editIndex].completed : false 
-  };
+  const percs = getRulePercentages();
+  const limit = salary * percs[category.toLowerCase()];
+  const currentTotal = data
+    .filter((item, idx) => item.category === category && idx !== editIndex)
+    .reduce((sum, item) => sum + item.amount, 0);
 
+  if (currentTotal + amount > limit) {
+    return alert(`🚨 Budget Exceeded! Limit for ${category} is RM ${limit.toFixed(2)}.`);
+  }
+
+  const newItem = { desc, amount, category, dueDate, recurring, completed: editIndex > -1 ? data[editIndex].completed : false };
   if (editIndex > -1) {
     data[editIndex] = newItem;
     document.getElementById("edit-index").value = "-1";
@@ -146,26 +201,7 @@ function addItem() {
   } else {
     data.push(newItem);
   }
-
-  saveData();
-  clearForm();
-  renderAll();
-}
-
-function clearForm() {
-  document.getElementById("desc").value = "";
-  document.getElementById("amount").value = "";
-  document.getElementById("dueDate").value = "";
-  document.getElementById("category").value = "Needs";
-  document.getElementById("recurring").checked = false;
-}
-
-function deleteItem(index) {
-  if (confirm("Are you sure you want to delete this item?")) {
-    data.splice(index, 1);
-    saveData();
-    renderAll();
-  }
+  saveData(); clearForm(); renderAll();
 }
 
 function editItem(index) {
@@ -177,118 +213,49 @@ function editItem(index) {
   document.getElementById("recurring").checked = item.recurring || false;
   document.getElementById("edit-index").value = index;
   document.getElementById("add-btn").textContent = "💾 Update Item";
-  window.scrollTo(0, 0);
+  const editCard = document.getElementById("edit-form-card");
+  if (editCard) editCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  else window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Rendering Logic
-function getAutoNeedsValue() {
-  const needsAlloc = salary * 0.6;
-  const fixedNeedsTotal = data
-    .filter(item => item.category === 'Needs')
-    .reduce((sum, item) => sum + item.amount, 0);
-  return Math.max(0, needsAlloc - fixedNeedsTotal);
-}
-
-function showSkeletons(targetId) {
-  const target = document.querySelector(`${targetId} tbody`);
-  if (!target) return;
-  target.innerHTML = `
-    <tr><td colspan="5"><div class="skeleton"></div></td></tr>
-    <tr><td colspan="5"><div class="skeleton"></div></td></tr>
-    <tr><td colspan="5"><div class="skeleton"></div></td></tr>
-  `;
-}
-
-let touchstartX = 0;
-let touchendX = 0;
-
-// Global tracker for opened swipe row
-let openedRow = null;
-
-// Close opened row when clicking elsewhere
-document.addEventListener('touchstart', (e) => {
-  if (openedRow && !openedRow.contains(e.target)) {
-    resetOpenedRow();
-  }
-}, { passive: true });
-
-function resetOpenedRow() {
-  if (openedRow) {
-    openedRow.style.transform = "translateX(0)";
-    const action = openedRow.querySelector('.swipe-action');
-    if (action) action.style.opacity = "0";
-    openedRow = null;
+function deleteItem(index) {
+  if (confirm("Are you sure you want to delete this item?")) {
+    data.splice(index, 1); saveData(); renderAll();
   }
 }
 
-function handleGesture(row, index) {
-  const swipeAction = row.querySelector('.swipe-action');
-  if (!swipeAction) return;
-
-  if (touchendX < touchstartX - 70) {
-    // If another row is open, close it first
-    if (openedRow && openedRow !== row) resetOpenedRow();
-
-    // Swipe left - reveal action
-    row.style.transform = "translateX(-80px)";
-    swipeAction.style.opacity = "1";
-    openedRow = row;
-  } else if (touchendX > touchstartX + 50) {
-    // Swipe right - cancel
-    row.style.transform = "translateX(0)";
-    swipeAction.style.opacity = "0";
-    if (openedRow === row) openedRow = null;
+function toggleComplete(index) {
+  const item = data[index];
+  item.completed = !item.completed;
+  if (item.completed && navigator.vibrate) navigator.vibrate(50);
+  if (item.dueDate) {
+    item.dueDate = advanceDate(item.dueDate, item.completed ? 1 : -1);
   }
-}
-
-function attachSwipeListeners(row, index) {
-  row.classList.add('swipe-row');
-  
+  saveData();
   const path = window.location.pathname.split("/").pop() || "index.html";
-  const isEntryPage = path === "entry.html";
-  const isCategoryPage = ["needs.html", "savings.html", "wants.html"].includes(path);
-
-  if (isEntryPage || isCategoryPage) {
-    const swipeAction = document.createElement('div');
-    swipeAction.className = 'swipe-action';
-    
-    if (isEntryPage) {
-      swipeAction.innerHTML = '❌';
-      swipeAction.classList.add('delete-action');
-      swipeAction.onclick = (e) => {
-        e.stopPropagation();
-        deleteItem(index);
-      };
-    } else {
-      const isCompleted = data[index].completed;
-      swipeAction.innerHTML = isCompleted ? '↩️' : '✅';
-      swipeAction.className = `swipe-action ${isCompleted ? 'undo-action' : 'done-action'}`;
-      swipeAction.onclick = (e) => {
-        e.stopPropagation();
-        toggleComplete(index);
-        resetOpenedRow();
-      };
-    }
-    row.appendChild(swipeAction);
+  if (path === "entry.html") renderAll();
+  else if (path.includes(".html")) {
+    const category = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
+    if (["Needs", "Savings", "Wants"].includes(category)) renderCategory(category);
   }
-
-  row.addEventListener('touchstart', e => {
-    touchstartX = e.changedTouches[0].screenX;
-  }, { passive: true });
-
-  row.addEventListener('touchend', e => {
-    touchendX = e.changedTouches[0].screenX;
-    handleGesture(row, index);
-  }, { passive: true });
 }
+
+function clearForm() {
+  document.getElementById("desc").value = "";
+  document.getElementById("amount").value = "";
+  document.getElementById("dueDate").value = "";
+  document.getElementById("category").value = "Needs";
+  document.getElementById("recurring").checked = false;
+}
+
+// ==========================================
+// 5. RENDERING LOGIC
+// ==========================================
 
 function renderAll() {
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
-
   tbody.innerHTML = "";
-  
-  // Add Fixed Items
   data.forEach((item, index) => {
     const tr = document.createElement('tr');
     if (item.completed) tr.classList.add('completed-row');
@@ -305,280 +272,290 @@ function renderAll() {
     attachSwipeListeners(tr, index);
     tbody.appendChild(tr);
   });
-
-  // Add Automated Needs Item
   if (salary > 0) {
     const autoValue = getAutoNeedsValue();
     const autoRow = document.createElement('tr');
     autoRow.style.background = "rgba(76, 175, 80, 0.1)";
     autoRow.style.fontStyle = "italic";
-    autoRow.innerHTML = `
-      <td data-label="Description">Foods/Snack/Groceries/Others (Auto)</td>
-      <td data-label="Amount">RM ${autoValue.toFixed(2)}</td>
-      <td data-label="Category">Needs</td>
-      <td data-label="Due Date">-</td>
-      <td data-label="Action"><small>Auto</small></td>
-    `;
+    autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">RM ${autoValue.toFixed(2)}</td><td data-label="Category">Needs</td><td data-label="Due Date">-</td><td data-label="Action"><small>Auto</small></td>`;
     tbody.appendChild(autoRow);
   }
-
-  if (data.length === 0 && salary === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="no-data">No entries found.</td></tr>';
-  }
-
-  const salaryInput = document.getElementById("salary");
-  if (salaryInput) salaryInput.value = salary || "";
 }
 
 function renderCategory(category) {
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
-
   tbody.innerHTML = "";
-  let totalAmount = 0;
-  let completedAmount = 0;
-
-  // Add fixed items
+  let totalAmount = 0, completedAmount = 0;
   data.forEach((item, index) => {
     if (item.category === category) {
       totalAmount += item.amount;
       if (item.completed) completedAmount += item.amount;
-      
       const tr = document.createElement('tr');
       if (item.completed) tr.classList.add('completed-row');
-      tr.innerHTML = `
-        <td data-label="Description">${item.desc}</td>
-        <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
-        <td data-label="Date">${item.dueDate || "-"}</td>
-      `;
+      tr.innerHTML = `<td data-label="Description">${item.desc}</td><td data-label="Amount">RM ${item.amount.toFixed(2)}</td><td data-label="Date">${item.dueDate || "-"}</td>`;
       attachSwipeListeners(tr, index);
       tbody.appendChild(tr);
     }
   });
-
-  // Add Auto item if category is Needs
   if (category === 'Needs' && salary > 0) {
-    const autoValue = getAutoNeedsValue();
-    totalAmount += autoValue;
-    // Auto value is considered uncompleted/ongoing
+    const autoValue = getAutoNeedsValue(); totalAmount += autoValue;
     const autoRow = document.createElement('tr');
-    autoRow.style.background = "rgba(76, 175, 80, 0.1)";
-    autoRow.style.fontStyle = "italic";
-    autoRow.innerHTML = `
-      <td data-label="Description">Foods/Snack/Groceries/Others (Auto)</td>
-      <td data-label="Amount">RM ${autoValue.toFixed(2)}</td>
-      <td data-label="Date">-</td>
-    `;
+    autoRow.style.background = "rgba(76, 175, 80, 0.1)"; autoRow.style.fontStyle = "italic";
+    autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">RM ${autoValue.toFixed(2)}</td><td data-label="Date">-</td>`;
     tbody.appendChild(autoRow);
   }
-
-  const remainingAmount = totalAmount - completedAmount;
-
-  if (totalAmount === 0 && !(category === 'Needs' && salary > 0)) {
-    tbody.innerHTML = `<tr><td colspan="3" class="no-data">No ${category} found.</td></tr>`;
-  }
-
   const totalEl = document.getElementById("total-category");
-  if (totalEl) {
-    totalEl.textContent = `Total ${category}: RM ${remainingAmount.toFixed(2)} / RM ${totalAmount.toFixed(2)}`;
-  }
+  if (totalEl) totalEl.textContent = `Total ${category}: RM ${(totalAmount - completedAmount).toFixed(2)} / RM ${totalAmount.toFixed(2)}`;
 }
 
-// Dashboard Logic
 function updateDashboard() {
   const dashSalary = document.getElementById("dash-salary");
   const dashTotal = document.getElementById("dash-total");
   const dashDueSoon = document.getElementById("dash-due-soon");
   const remindersList = document.getElementById("reminders-list");
-
   if (!dashSalary) return;
-
   dashSalary.textContent = `RM ${salary.toFixed(2)}`;
-
-  let totalExpenses = 0;
-  let needsTotal = 0;
-  let wantsTotal = 0;
-  let savingsTotal = 0;
-  let dueSoonCount = 0;
-  
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const nextWeek = new Date();
-  nextWeek.setDate(today.getDate() + 7);
-
+  let totalExpenses = 0, dueSoonCount = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const nextWeek = new Date(); nextWeek.setDate(today.getDate() + 7);
   remindersList.innerHTML = "";
-
-  // Process data
   data.forEach(item => {
     totalExpenses += item.amount;
-    if (item.category === 'Needs') needsTotal += item.amount;
-    if (item.category === 'Wants') wantsTotal += item.amount;
-    if (item.category === 'Savings') savingsTotal += item.amount;
-
-    // Check for due soon / overdue status
     if (item.dueDate && !item.completed) {
-      const dueDate = new Date(item.dueDate);
-      dueDate.setHours(0,0,0,0);
-      
-      const isDueSoon = dueDate >= today && dueDate <= nextWeek;
-      const isOverdue = dueDate < today;
-
-      if (isDueSoon) dueSoonCount++;
-
-      // Only show reminders for 'Needs' category
+      const dueDate = new Date(item.dueDate); dueDate.setHours(0,0,0,0);
+      if (dueDate >= today && dueDate <= nextWeek) dueSoonCount++;
       if (item.category === 'Needs') {
-        if (isDueSoon) {
-          remindersList.innerHTML += `
-            <div class="due-soon" style="margin-bottom: 5px; font-size: 0.6rem;">
-              ⚠️ <strong>${item.desc}</strong> is due on ${item.dueDate} (RM ${item.amount.toFixed(2)})
-            </div>
-          `;
-        } else if (isOverdue) {
-          remindersList.innerHTML += `
-            <div class="overdue" style="margin-bottom: 5px; font-size: 0.6rem;">
-              🚨 <strong>${item.desc}</strong> was due on ${item.dueDate} (RM ${item.amount.toFixed(2)}) - OVERDUE
-            </div>
-          `;
-        }
+        if (dueDate >= today && dueDate <= nextWeek) remindersList.innerHTML += `<div class="due-soon">⚠️ <strong>${item.desc}</strong> due ${item.dueDate}</div>`;
+        else if (dueDate < today) remindersList.innerHTML += `<div class="overdue">🚨 <strong>${item.desc}</strong> was due ${item.dueDate}</div>`;
       }
     }
   });
-
-  // Add Auto Needs to totals
-  const autoNeeds = getAutoNeedsValue();
-  needsTotal += autoNeeds;
-  totalExpenses += autoNeeds;
-
-  if (remindersList.innerHTML === "") {
-    remindersList.innerHTML = '<p class="no-data">No urgent reminders.</p>';
-  }
-
+  const autoNeeds = getAutoNeedsValue(); totalExpenses += autoNeeds;
+  if (remindersList.innerHTML === "") remindersList.innerHTML = '<p class="no-data">No urgent reminders.</p>';
   dashTotal.textContent = `RM ${totalExpenses.toFixed(2)}`;
   dashDueSoon.textContent = `${dueSoonCount} Items`;
-
-  const { needsAlloc, wantsAlloc, savingsAlloc } = calculateSplit();
-
-  document.getElementById("needs-status").textContent = `RM ${needsTotal.toFixed(2)} / ${needsAlloc}`;
-  document.getElementById("wants-status").textContent = `RM ${wantsTotal.toFixed(2)} / ${wantsAlloc}`;
-  document.getElementById("savings-status").textContent = `RM ${savingsTotal.toFixed(2)} / ${savingsAlloc}`;
+  calculateSplit();
 }
 
-// Initial setup
-window.addEventListener('load', () => {
-  showSkeletons("#table");
-  checkMonthlyReset();
-  updateActiveNav();
-  
-  // Brief delay to simulate/show skeleton for professional feel
-  setTimeout(() => {
-    if (typeof updateDashboard === 'function' && document.getElementById("dash-salary")) {
-      updateDashboard();
-    }
-    
-    const path = window.location.pathname.split("/").pop() || "index.html";
-    if (path === "entry.html") renderAll();
-    else if (path.includes(".html")) {
-      const category = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
-      if (["Needs", "Savings", "Wants"].includes(category)) renderCategory(category);
-    }
-  }, 300);
-  
-  // Register Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('Service Worker Registered'))
-      .catch(err => console.log('Service Worker Error: ', err));
+// ==========================================
+// 6. GESTURE & UI HELPERS
+// ==========================================
+
+function resetOpenedRow() {
+  if (openedRow) {
+    openedRow.style.transform = "translateX(0)";
+    const action = openedRow.querySelector('.swipe-action');
+    if (action) action.style.opacity = "0";
+    openedRow = null;
   }
-});
+}
 
-// CSV Export/Import Functions
+function handleGesture(row, index) {
+  const swipeAction = row.querySelector('.swipe-action');
+  if (!swipeAction) return;
+  if (touchendX < touchstartX - 70) {
+    if (openedRow && openedRow !== row) resetOpenedRow();
+    row.style.transform = "translateX(-80px)";
+    swipeAction.style.opacity = "1";
+    openedRow = row;
+  } else if (touchendX > touchstartX + 50) {
+    row.style.transform = "translateX(0)";
+    swipeAction.style.opacity = "0";
+    if (openedRow === row) openedRow = null;
+  }
+}
+
+function attachSwipeListeners(row, index) {
+  row.classList.add('swipe-row');
+  const path = window.location.pathname.split("/").pop() || "index.html";
+  const isEntryPage = path === "entry.html";
+  const isCategoryPage = ["needs.html", "savings.html", "wants.html"].includes(path);
+  if (isEntryPage || isCategoryPage) {
+    const swipeAction = document.createElement('div');
+    swipeAction.className = 'swipe-action';
+    if (isEntryPage) {
+      swipeAction.innerHTML = '❌'; swipeAction.classList.add('delete-action');
+      swipeAction.onclick = (e) => { e.stopPropagation(); deleteItem(index); };
+    } else {
+      const isCompleted = data[index].completed;
+      swipeAction.innerHTML = isCompleted ? '↩️' : '✅';
+      swipeAction.className = `swipe-action ${isCompleted ? 'undo-action' : 'done-action'}`;
+      swipeAction.onclick = (e) => { e.stopPropagation(); toggleComplete(index); resetOpenedRow(); };
+    }
+    row.appendChild(swipeAction);
+  }
+  row.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, { passive: true });
+  row.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handleGesture(row, index); }, { passive: true });
+}
+
+function calculateSplit() {
+  const percs = getRulePercentages();
+  const needsAlloc = (salary * percs.needs).toFixed(2);
+  const wantsAlloc = (salary * percs.wants).toFixed(2);
+  const savingsAlloc = (salary * percs.savings).toFixed(2);
+  
+  const limits = { needs: Number(needsAlloc), wants: Number(wantsAlloc), savings: Number(savingsAlloc) };
+  const currentTotals = { needs: 0, wants: 0, savings: 0 };
+  
+  data.forEach(item => {
+    const cat = item.category.toLowerCase();
+    if (currentTotals.hasOwnProperty(cat)) currentTotals[cat] += item.amount;
+  });
+  
+  // Add Auto Needs to the needs total for visualization
+  if (salary > 0) currentTotals.needs += getAutoNeedsValue();
+
+  const updateDisplay = (id, percId, alloc, total) => {
+    const el = document.getElementById(id);
+    const percEl = document.getElementById(percId);
+    if (percEl) percEl.textContent = Math.round(alloc / salary * 100) || (id === "needs" ? percs.needs * 100 : id === "wants" ? percs.wants * 100 : percs.savings * 100);
+    if (el) {
+      el.textContent = `RM ${alloc}`;
+      if (total > alloc && salary > 0) {
+        el.style.color = "#f44336";
+        el.innerHTML = `RM ${alloc} <br><small style="font-size:0.6rem; font-weight:bold;">⚠️ Over by RM ${(total - alloc).toFixed(2)}</small>`;
+      } else {
+        el.style.color = "#4CAF50";
+      }
+    }
+  };
+
+  updateDisplay("needs", "perc-needs", limits.needs, currentTotals.needs);
+  updateDisplay("wants", "perc-wants", limits.wants, currentTotals.wants);
+  updateDisplay("savings", "perc-savings", limits.savings, currentTotals.savings);
+  
+  // Highlight active button
+  const btn622 = document.getElementById('rule-622');
+  const btn721 = document.getElementById('rule-721');
+  if (btn622 && btn721) {
+    const isActive = (rule) => budgetRule === rule && ruleSelected;
+    btn622.style.background = isActive('622') ? '#4CAF50' : '#333';
+    btn622.style.color = isActive('622') ? 'black' : 'white';
+    btn721.style.background = isActive('721') ? '#4CAF50' : '#333';
+    btn721.style.color = isActive('721') ? 'black' : 'white';
+  }
+}
+
+function getAutoNeedsValue() {
+  const percs = getRulePercentages();
+  const needsAlloc = salary * percs.needs;
+  const fixedNeedsTotal = data.filter(item => item.category === 'Needs').reduce((sum, item) => sum + item.amount, 0);
+  return Math.max(0, needsAlloc - fixedNeedsTotal);
+}
+
+function showSkeletons(targetId) {
+  const target = document.querySelector(`${targetId} tbody`);
+  if (!target) return;
+  target.innerHTML = '<tr><td colspan="5"><div class="skeleton"></div></td></tr>';
+}
+
+function updateActiveNav() {
+  const path = window.location.pathname.split("/").pop() || "index.html";
+  document.querySelectorAll(".nav-item").forEach(item => {
+    const href = item.getAttribute("href");
+    if (href === path) item.classList.add("active"); else item.classList.remove("active");
+  });
+}
+
 function exportToCSV() {
-  if (data.length === 0) return alert("No data to export");
-
+  if (data.length === 0) return alert("No data");
   const headers = ["Description", "Amount", "Category", "DueDate", "Completed"];
-  const csvContent = [
-    headers.join(","),
-    ...data.map(item => [
-      `"${item.desc.replace(/"/g, '""')}"`,
-      item.amount,
-      item.category,
-      item.dueDate || "",
-      item.completed ? "TRUE" : "FALSE"
-    ].join(","))
-  ].join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const csv = [headers.join(","), ...data.map(item => [`"${item.desc}"`, item.amount, item.category, item.dueDate || "", item.completed ? "TRUE" : "FALSE"].join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `budget_tracker_${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const link = document.createElement("a"); link.href = url; link.download = "budget.csv"; link.click();
 }
 
 function importFromCSV(event) {
   const file = event.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = function(e) {
-    const text = e.target.result;
-    const lines = text.split(/\r?\n/);
-    if (lines.length < 2) return alert("Invalid CSV file");
-
+    const lines = e.target.result.split(/\r?\n/);
     const importedData = [];
-    // Start from index 1 to skip header
+    const totals = { needs: 0, wants: 0, savings: 0 };
+    
+    // Calculate current totals
+    data.forEach(item => {
+      const cat = item.category.toLowerCase();
+      if (totals.hasOwnProperty(cat)) totals[cat] += item.amount;
+    });
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-
-      // Robust CSV parsing regex to handle quoted commas
-      const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
-      const parts = [];
-      let match;
+      const p = line.split(",");
+      if (p.length < 4) continue;
       
-      // Manual split logic to handle empty fields between commas
-      const rawParts = [];
-      let current = '';
-      let inQuotes = false;
-      for (let char of line) {
-        if (char === '"') inQuotes = !inQuotes;
-        else if (char === ',' && !inQuotes) {
-          rawParts.push(current);
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      rawParts.push(current);
-
-      if (rawParts.length < 4) continue;
-
-      const desc = rawParts[0].replace(/^"|"$/g, '').replace(/""/g, '"');
-      const amount = parseFloat(rawParts[1]);
-      const category = rawParts[2].trim();
-      const dueDate = rawParts[3].trim();
-      const completed = rawParts[4] ? rawParts[4].trim().toUpperCase() === "TRUE" : false;
-
+      const desc = p[0].replace(/^"|"$/g, '');
+      const amount = parseFloat(p[1]);
+      const category = p[2].trim();
+      const dueDate = p[3].trim();
+      const completed = p[4] ? p[4].trim().toUpperCase() === "TRUE" : false;
+      const catKey = category.toLowerCase();
+      
       if (desc && !isNaN(amount)) {
         importedData.push({ desc, amount, category, dueDate, completed });
+        if (totals.hasOwnProperty(catKey)) totals[catKey] += amount;
+      }
+    }
+
+    // Budget Check
+    const percs = getRulePercentages();
+    const limits = {
+      needs: salary * percs.needs,
+      wants: salary * percs.wants,
+      savings: salary * percs.savings
+    };
+
+    let overBudgetMsg = "";
+    for (const cat in limits) {
+      if (totals[cat] > limits[cat]) {
+        overBudgetMsg += `\n- ${cat.charAt(0).toUpperCase() + cat.slice(1)}: RM ${totals[cat].toFixed(2)} (Limit: RM ${limits[cat].toFixed(2)})`;
+      }
+    }
+
+    if (overBudgetMsg) {
+      if (!confirm(`⚠️ Warning: Importing this data will exceed your budget for the following categories:${overBudgetMsg}\n\nDo you want to proceed anyway?`)) {
+        event.target.value = "";
+        return;
       }
     }
 
     if (importedData.length > 0) {
-      if (confirm(`Import ${importedData.length} items? This will ADD to your current list.`)) {
-        data = [...data, ...importedData];
-        saveData();
-        renderAll();
-        alert("Import successful!");
-      }
-    } else {
-      alert("No valid data found in CSV.");
+      data = [...data, ...importedData];
+      saveData();
+      renderAll();
+      calculateSplit();
+      alert("Data imported successfully.");
     }
-    // Reset file input
     event.target.value = "";
   };
   reader.readAsText(file);
 }
+
+// ==========================================
+// 8. INITIALIZATION
+// ==========================================
+
+// Global touch listener for closing swipe rows
+document.addEventListener('touchstart', (e) => {
+  if (openedRow && !openedRow.contains(e.target)) resetOpenedRow();
+}, { passive: true });
+
+window.addEventListener('load', () => {
+  showSkeletons("#table");
+  checkMonthlyReset();
+  updateActiveNav();
+  
+  setTimeout(() => {
+    const path = window.location.pathname.split("/").pop() || "index.html";
+    if (path === "index.html") updateDashboard();
+    else if (path === "entry.html") { syncSetupUI(); renderAll(); }
+    else if (path.includes(".html")) {
+      const cat = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
+      if (["Needs", "Savings", "Wants"].includes(cat)) renderCategory(cat);
+    }
+  }, 300);
+});

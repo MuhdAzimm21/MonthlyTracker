@@ -35,19 +35,49 @@
 <div class="container">
   <h2>Manage Data</h2>
 
-  <!-- Salary Input -->
-  <div class="card">
-    <label>Monthly Salary (RM)</label>
-    <input type="number" id="salary" placeholder="Enter salary" oninput="calculateSplit()">
-    <div class="split">
-      <p>Allocated Needs (60%): <span id="needs">RM 0</span></p>
-      <p>Allocated Wants (20%): <span id="wants">RM 0</span></p>
-      <p>Allocated Savings (20%): <span id="savings">RM 0</span></p>
+  <!-- Salary & Rule Setup -->
+  <div class="card" id="setup-card">
+    <h3 id="setup-title">Step 1: Monthly Income</h3>
+    
+    <!-- Step 1: Salary Input -->
+    <div id="step-salary">
+      <label>How much is your monthly income? (RM)</label>
+      <input type="number" id="salary" placeholder="e.g. 3000" onkeypress="if(event.key === 'Enter') confirmSalary()">
+      <button onclick="confirmSalary()" style="background: #2196F3;">Confirm Salary</button>
+    </div>
+
+    <!-- Step 2: Budget Rule (Hidden until salary confirmed) -->
+    <div id="step-rule" style="display: none; margin-top: 15px;">
+      <h3 style="margin-top: 0;">Step 2: Choose Budget Rule</h3>
+      <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">Select how you want to split your income:</p>
+      <div style="display: flex; gap: 10px;">
+        <button id="rule-622" onclick="setBudgetRule('622')" style="margin-top: 0; flex: 1; background: #333; font-size: 0.8rem; padding: 12px;">
+          <strong>6/2/2</strong><br>
+          <small>60% Needs | 20% Wants | 20% Savings</small>
+        </button>
+        <button id="rule-721" onclick="setBudgetRule('721')" style="margin-top: 0; flex: 1; background: #333; font-size: 0.8rem; padding: 12px;">
+          <strong>7/2/1</strong><br>
+          <small>70% Needs | 20% Savings | 10% Wants</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Setup Summary (Shown when everything is set) -->
+    <div id="setup-summary" style="display: none; margin-top: 15px; border-top: 1px solid #333; padding-top: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <p style="margin: 0; font-weight: bold; color: #4CAF50;">✅ Budgeting Setup Active</p>
+        <button onclick="editSalary()" style="width: auto; margin-top: 0; padding: 5px 10px; font-size: 0.7rem; background: #555;">Edit Setup</button>
+      </div>
+      <div class="split" style="margin-top: 10px;">
+        <p>Needs (<span id="perc-needs">60</span>%): <span id="needs">RM 0</span></p>
+        <p>Wants (<span id="perc-wants">20</span>%): <span id="wants">RM 0</span></p>
+        <p>Savings (<span id="perc-savings">20</span>%): <span id="savings">RM 0</span></p>
+      </div>
     </div>
   </div>
 
   <!-- Add Expense -->
-  <div class="card">
+  <div class="card" id="edit-form-card" style="opacity: 0.5; pointer-events: none;">
     <h3>Add / Edit Entry</h3>
     <input type="hidden" id="edit-index" value="-1">
     <input type="text" id="desc" placeholder="Description (e.g., Rent, Grocery)">
@@ -69,7 +99,7 @@
   </div>
 
   <!-- Data Table -->
-  <div class="card"  >
+  <div class="card" id="data-table-card" style="opacity: 0.5; pointer-events: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
       <h3 style="margin: 0;">All Entries</h3>
       <div style="display: flex; gap: 8px;">
@@ -101,5 +131,7 @@
     calculateSplit();
   });
 </script>
+</body>
+</html>>
 </body>
 </html>
