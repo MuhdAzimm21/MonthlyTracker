@@ -339,6 +339,86 @@ button.edit-btn {
   flex: 1;
 }
 
+.stat-card.info { border-left-color: #2196F3; }
+.stat-card.success { border-left-color: #4CAF50; }
+.stat-card.warning { border-left-color: #FF9800; }
+.stat-card.danger { border-left-color: #f44336; }
+
+/* Progress Bars */
+.progress-container {
+  background: #333;
+  border-radius: 6px;
+  height: 8px;
+  width: 100%;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #4CAF50;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+.progress-bar.warning { background: #FF9800; }
+.progress-bar.danger { background: #f44336; }
+
+.budget-item {
+  background: #252525;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.budget-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.budget-item-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.budget-item-amounts {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.health-score-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.health-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border: 4px solid #4CAF50;
+  color: #4CAF50;
+}
+
+.health-text h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.health-text p {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
 /* Responsive Table */
 table {
   width: 100%;

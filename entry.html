@@ -41,7 +41,7 @@
     <h3 id="setup-title">Step 1: Monthly Income</h3>
     
     <!-- Step 1: Salary Input -->
-    <div id="step-salary">
+    <div id="step-salary" style="display: none;">
       <label>How much is your monthly income? (RM)</label>
       <input type="number" id="salary" placeholder="e.g. 3000" onkeypress="if(event.key === 'Enter') confirmSalary()">
       <button onclick="confirmSalary()" style="background: #2196F3;">Confirm Salary</button>
@@ -91,11 +91,6 @@
       <option value="Savings">Savings</option>
     </select>
 
-    <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px; background: #252525; padding: 10px; border-radius: 8px; border: 1px solid #333;">
-      <input type="checkbox" id="recurring" style="width: 20px; height: 20px; margin-top: 0;">
-      <label for="recurring" style="font-size: 0.9rem; color: #aaa;">🔄 Set as Recurring (Keep for next month)</label>
-    </div>
-
     <button id="add-btn" onclick="addItem()">➕ Add Item</button>
   </div>
 
@@ -106,6 +101,7 @@
       <div style="display: flex; gap: 8px;">
         <button onclick="exportToCSV()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #2196F3;">📤 Export</button>
         <button onclick="document.getElementById('csv-upload').click()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #FF9800;">📥 Upload</button>
+        <button onclick="resetData()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #f44336;">🔄 Reset</button>
         <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="importFromCSV(event)">
       </div>
     </div>

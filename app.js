@@ -105,7 +105,7 @@ function getRulePercentages() {
 }
 
 // ==========================================
-// 3. DATE UTILITIES & AUTO-RESET
+// 3. DATE UTILITIES
 // ==========================================
 
 function advanceDate(dateStr, months) {
@@ -117,38 +117,15 @@ function advanceDate(dateStr, months) {
   return d.toISOString().split('T')[0];
 }
 
-function checkMonthlyReset() {
-  const now = new Date();
-  const currentMonthYear = `${now.getMonth()}-${now.getFullYear()}`;
-  if (lastResetMonth !== currentMonthYear) {
-    const today = new Date(); today.setHours(0,0,0,0);
-    data = data.filter(item => item.recurring || !item.completed).map(item => {
-      let newDate = item.dueDate;
-      if (newDate && item.recurring) {
-        const d = new Date(newDate);
-        if (d < today) {
-          const monthsDiff = (today.getFullYear() - d.getFullYear()) * 12 + (today.getMonth() - d.getMonth());
-          if (monthsDiff > 0) newDate = advanceDate(newDate, monthsDiff);
-        }
-      }
-      return { ...item, completed: false, dueDate: newDate };
-    });
-    lastResetMonth = currentMonthYear;
-    localStorage.setItem("lastResetMonth", lastResetMonth);
-    saveData();
-  }
-}
-
 // ==========================================
 // 4. CORE DATA LOGIC (ADD, EDIT, DELETE)
 // ==========================================
 
-function addItem() {
+async function addItem() {
   const desc = document.getElementById("desc").value;
   const amount = Number(document.getElementById("amount").value);
   const category = document.getElementById("category").value;
   const dueDate = document.getElementById("dueDate").value;
-  const recurring = document.getElementById("recurring").checked;
   const editIndex = parseInt(document.getElementById("edit-index").value);
 
   if (!desc || !amount) return Popup.toast("Please fill in Description and Amount", "warning");
@@ -160,10 +137,11 @@ function addItem() {
     .reduce((sum, item) => sum + item.amount, 0);
 
   if (currentTotal + amount > limit) {
-    return Popup.alert("Budget Exceeded", `Limit for ${category} is RM ${limit.toFixed(2)}. This entry would bring you to RM ${(currentTotal + amount).toFixed(2)}.`, "🚨");
+    const proceed = await Popup.confirm("Budget Exceeded", `Limit for ${category} is RM ${limit.toFixed(2)}. This entry would bring you to RM ${(currentTotal + amount).toFixed(2)}.<br><br>Do you want to save this anyway?`, "🚨");
+    if (!proceed) return;
   }
 
-  const newItem = { desc, amount, category, dueDate, recurring, completed: editIndex > -1 ? data[editIndex].completed : false };
+  const newItem = { desc, amount, category, dueDate, completed: editIndex > -1 ? data[editIndex].completed : false };
   if (editIndex > -1) {
     data[editIndex] = newItem;
     document.getElementById("edit-index").value = "-1";
@@ -182,7 +160,6 @@ function editItem(index) {
   document.getElementById("amount").value = item.amount;
   document.getElementById("category").value = item.category;
   document.getElementById("dueDate").value = item.dueDate || "";
-  document.getElementById("recurring").checked = item.recurring || false;
   document.getElementById("edit-index").value = index;
   document.getElementById("add-btn").textContent = "💾 Update Item";
   const editCard = document.getElementById("edit-form-card");
@@ -205,9 +182,6 @@ function toggleComplete(index) {
   const item = data[index];
   item.completed = !item.completed;
   if (item.completed && navigator.vibrate) navigator.vibrate(50);
-  if (item.dueDate) {
-    item.dueDate = advanceDate(item.dueDate, item.completed ? 1 : -1);
-  }
   saveData();
   
   Popup.toast(
@@ -228,7 +202,6 @@ function clearForm() {
   document.getElementById("amount").value = "";
   document.getElementById("dueDate").value = "";
   document.getElementById("category").value = "Needs";
-  document.getElementById("recurring").checked = false;
 }
 
 // ==========================================
@@ -282,7 +255,7 @@ function renderAll() {
     const tr = document.createElement('tr');
     if (item.completed) tr.classList.add('completed-row');
     tr.innerHTML = `
-      <td data-label="Description">${item.recurring ? '🔄 ' : ''}${item.desc}</td>
+      <td data-label="Description">${item.desc}</td>
       <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
       <td data-label="Category">${item.category}</td>
       <td data-label="Due Date">${item.dueDate || "-"}</td>
@@ -466,25 +439,74 @@ function calculateSplit() {
   
   if (salary > 0) currentTotals.needs += getAutoNeedsValue();
 
-  const updateDisplay = (id, percId, alloc, total) => {
+  const updateDisplay = (id, percId, alloc, total, barId, totalId) => {
     const el = document.getElementById(id);
     const percEl = document.getElementById(percId);
+    const barEl = document.getElementById(barId);
+    const totalDisplayEl = document.getElementById(totalId);
+
     if (percEl) percEl.textContent = Math.round(alloc / salary * 100) || (id === "needs" ? percs.needs * 100 : id === "wants" ? percs.wants * 100 : percs.savings * 100);
+    
     if (el) {
-      el.textContent = `RM ${alloc}`;
+      if (id === "needs" || id === "wants" || id === "savings") {
+         el.textContent = `RM ${alloc}`;
+      }
+      
       if (total > alloc && salary > 0) {
         el.style.color = "#f44336";
-        el.innerHTML = `RM ${alloc} <br><small style="font-size:0.6rem; font-weight:bold;">⚠️ Over by RM ${(total - alloc).toFixed(2)}</small>`;
+        if (el.tagName !== "SPAN") el.innerHTML = `RM ${alloc} <br><small style="font-size:0.6rem; font-weight:bold;">⚠️ Over by RM ${(total - alloc).toFixed(2)}</small>`;
       } else {
         el.style.color = "#4CAF50";
       }
     }
+
+    if (totalDisplayEl) totalDisplayEl.textContent = `RM ${total.toFixed(2)}`;
+
+    if (barEl) {
+      const percentage = salary > 0 ? Math.min(100, (total / alloc) * 100) : 0;
+      barEl.style.width = `${percentage}%`;
+      barEl.classList.remove('warning', 'danger');
+      if (percentage > 100) barEl.classList.add('danger');
+      else if (percentage > 85) barEl.classList.add('warning');
+    }
   };
 
-  updateDisplay("needs", "perc-needs", limits.needs, currentTotals.needs);
-  updateDisplay("wants", "perc-wants", limits.wants, currentTotals.wants);
-  updateDisplay("savings", "perc-savings", limits.savings, currentTotals.savings);
+  updateDisplay("needs", "perc-needs", limits.needs, currentTotals.needs, "bar-needs", "total-needs");
+  updateDisplay("wants", "perc-wants", limits.wants, currentTotals.wants, "bar-wants", "total-wants");
+  updateDisplay("savings", "perc-savings", limits.savings, currentTotals.savings, "bar-savings", "total-savings");
   
+  // Health Score Logic
+  const healthCircle = document.getElementById("health-circle");
+  if (healthCircle) {
+    let overCount = 0;
+    if (currentTotals.needs > limits.needs) overCount++;
+    if (currentTotals.wants > limits.wants) overCount++;
+    if (currentTotals.savings > limits.savings) overCount++;
+
+    const healthTitle = document.getElementById("health-title");
+    const healthDesc = document.getElementById("health-desc");
+    
+    if (overCount === 0) {
+      healthCircle.textContent = "100%";
+      healthCircle.style.color = "#4CAF50";
+      healthCircle.style.borderColor = "#4CAF50";
+      healthTitle.textContent = "Budget is Healthy";
+      healthDesc.textContent = "You are spending within your limits.";
+    } else if (overCount === 1) {
+      healthCircle.textContent = "80%";
+      healthCircle.style.color = "#FF9800";
+      healthCircle.style.borderColor = "#FF9800";
+      healthTitle.textContent = "Watching Limits";
+      healthDesc.textContent = "One of your categories is over budget.";
+    } else {
+      healthCircle.textContent = "40%";
+      healthCircle.style.color = "#f44336";
+      healthCircle.style.borderColor = "#f44336";
+      healthTitle.textContent = "Critical Overspend";
+      healthDesc.textContent = "Multiple categories have exceeded their limits.";
+    }
+  }
+
   const btn622 = document.getElementById('rule-622');
   const btn721 = document.getElementById('rule-721');
   if (btn622 && btn721) {
@@ -587,6 +609,31 @@ function importFromCSV(event) {
   reader.readAsText(file);
 }
 
+async function resetData() {
+  const confirmed = await Popup.confirm("New Salary Received?", "This will reset all items to 'Pending' and advance all due dates by 1 month. Proceed?", "🔄");
+  if (confirmed) {
+    data = data.map(item => ({ 
+      ...item, 
+      completed: false,
+      dueDate: item.dueDate ? advanceDate(item.dueDate, 1) : ""
+    }));
+    saveData();
+    
+    const path = window.location.pathname.split("/").pop() || "index.html";
+    if (path === "index.html") updateDashboard();
+    else if (path === "entry.html") {
+      renderAll();
+      calculateSplit();
+    }
+    else if (path.includes(".html")) {
+      const cat = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
+      if (["Needs", "Savings", "Wants"].includes(cat)) renderCategory(cat);
+    }
+    
+    Popup.toast("Data reset and dates advanced!");
+  }
+}
+
 // ==========================================
 // 8. INITIALIZATION
 // ==========================================
@@ -597,20 +644,17 @@ document.addEventListener('touchstart', (e) => {
 
 window.addEventListener('load', () => {
   showSkeletons("#table");
-  checkMonthlyReset();
   updateActiveNav();
   
-  setTimeout(() => {
-    const path = window.location.pathname.split("/").pop() || "index.html";
-    if (path === "index.html") updateDashboard();
-    else if (path === "entry.html") { 
-      syncSetupUI(); 
-      renderAll(); 
-      initFilters();
-    }
-    else if (path.includes(".html")) {
-      const cat = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
-      if (["Needs", "Savings", "Wants"].includes(cat)) renderCategory(cat);
-    }
-  }, 300);
+  const path = window.location.pathname.split("/").pop() || "index.html";
+  if (path === "index.html") updateDashboard();
+  else if (path === "entry.html") { 
+    syncSetupUI(); 
+    renderAll(); 
+    initFilters();
+  }
+  else if (path.includes(".html")) {
+    const cat = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
+    if (["Needs", "Savings", "Wants"].includes(cat)) renderCategory(cat);
+  }
 });

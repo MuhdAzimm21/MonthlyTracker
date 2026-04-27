@@ -36,13 +36,25 @@
 <div class="container">
   <h2>Financial Overview</h2>
 
+  <!-- Health Score Section -->
+  <div class="card">
+    <div class="health-score-container">
+      <div class="health-circle" id="health-circle">100%</div>
+      <div class="health-text">
+        <h4 id="health-title">Budget is Healthy</h4>
+        <p id="health-desc">You are spending within your limits.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Stats Grid -->
   <div class="dashboard-grid">
     <div class="stat-card info">
-      <h3>Monthly Salary</h3>
+      <h3>Income</h3>
       <p id="dash-salary">RM 0</p>
     </div>
     <div class="stat-card success">
-      <h3>Total Expenses</h3>
+      <h3>Expenses</h3>
       <p id="dash-total">RM 0</p>
     </div>
     <div class="stat-card warning">
@@ -52,18 +64,46 @@
   </div>
 
   <div class="card">
-    <h3>📢 Important Reminders</h3>
+    <h3>📢 Urgent Notifications</h3>
     <div id="reminders-list">
       <!-- Reminders will be injected here -->
     </div>
   </div>
 
   <div class="card">
-    <h3>📈 Budget Split Status</h3>
-    <div class="split">
-      <p>Needs (<span id="perc-needs">60</span>%) <span id="needs"></span></p>
-      <p>Wants (<span id="perc-wants">20</span>%) <span id="wants"></span></p>
-      <p>Savings (<span id="perc-savings">20</span>%) <span id="savings"></span></p>
+    <h3>📈 Budget Allocation</h3>
+    
+    <div id="budget-bars">
+      <!-- Progress bars for Needs, Wants, Savings -->
+      <div class="budget-item">
+        <div class="budget-item-header">
+          <span class="budget-item-name">Needs (<span id="perc-needs">0</span>%)</span>
+          <span class="budget-item-amounts"><span id="total-needs">RM 0</span> / <span id="needs">RM 0</span></span>
+        </div>
+        <div class="progress-container">
+          <div id="bar-needs" class="progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="budget-item">
+        <div class="budget-item-header">
+          <span class="budget-item-name">Wants (<span id="perc-wants">0</span>%)</span>
+          <span class="budget-item-amounts"><span id="total-wants">RM 0</span> / <span id="wants">RM 0</span></span>
+        </div>
+        <div class="progress-container">
+          <div id="bar-wants" class="progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="budget-item">
+        <div class="budget-item-header">
+          <span class="budget-item-name">Savings (<span id="perc-savings">0</span>%)</span>
+          <span class="budget-item-amounts"><span id="total-savings">RM 0</span> / <span id="savings">RM 0</span></span>
+        </div>
+        <div class="progress-container">
+          <div id="bar-savings" class="progress-bar"></div>
+        </div>
+      </div>
     </div>
   </div>
 
