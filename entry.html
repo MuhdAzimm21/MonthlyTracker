@@ -4,31 +4,34 @@
   <meta charset="UTF-8">
   <title>Manage Data - Monthly Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1c1c1c">
+  <meta name="theme-color" content="#0d0d0d">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="bottom-nav">
   <a href="index.html" class="nav-item">
-    <span>🏠</span>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
     <p>Home</p>
   </a>
   <a href="needs.html" class="nav-item">
-    <span>📋</span>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
     <p>Needs</p>
   </a>
-  <a href="entry.html" class="fab">+</a>
+  <a href="entry.html" class="fab">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:30px;height:30px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+  </a>
   <a href="savings.html" class="nav-item">
-    <span>💰</span>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" /></svg>
     <p>Savings</p>
   </a>
   <a href="wants.html" class="nav-item">
-    <span>✨</span>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg>
     <p>Wants</p>
   </a>
 </div>
@@ -44,10 +47,10 @@
     <div id="step-salary" style="display: none;">
       <label>How much is your monthly income? (RM)</label>
       <input type="number" id="salary" placeholder="e.g. 3000" onkeypress="if(event.key === 'Enter') confirmSalary()">
-      <button onclick="confirmSalary()" style="background: #2196F3;">Confirm Salary</button>
+      <button onclick="confirmSalary()">Confirm Salary</button>
     </div>
 
-    <!-- Step 2: Budget Rule (Hidden until salary confirmed) -->
+    <!-- Step 2: Budget Rule -->
     <div id="step-rule" style="display: none; margin-top: 15px;">
       <h3 style="margin-top: 0;">Step 2: Choose Budget Rule</h3>
       <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">Select how you want to split your income:</p>
@@ -63,11 +66,11 @@
       </div>
     </div>
 
-    <!-- Step 3: Setup Summary (Shown when everything is set) -->
+    <!-- Step 3: Setup Summary -->
     <div id="setup-summary" style="display: none; margin-top: 15px; border-top: 1px solid #333; padding-top: 15px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <p style="margin: 0; font-weight: bold; color: #4CAF50;">✅ Budgeting Setup Active</p>
-        <button onclick="editSalary()" style="width: auto; margin-top: 0; padding: 5px 10px; font-size: 0.7rem; background: #555;">Edit Setup</button>
+        <p style="margin: 0; font-weight: bold; color: var(--success);">Budgeting Setup Active</p>
+        <button onclick="editSalary()" style="width: auto; margin-top: 0; padding: 5px 10px; font-size: 0.7rem; background: #333;">Edit Setup</button>
       </div>
       <div class="split" style="margin-top: 10px;">
         <p>Needs (<span id="perc-needs">60</span>%): <span id="needs">RM 0</span></p>
@@ -77,21 +80,32 @@
     </div>
   </div>
 
-  <!-- Add Expense -->
-  <div class="card" id="edit-form-card" style="opacity: 0.5; pointer-events: none;">
-    <h3>Add / Edit Entry</h3>
-    <input type="hidden" id="edit-index" value="-1">
-    <input type="text" id="desc" placeholder="Description (e.g., Rent, Grocery)">
-    <input type="number" id="amount" placeholder="Amount (RM)">
-    <input type="date" id="dueDate">
+  <!-- Modal Trigger Button -->
+  <button onclick="openEntryModal()" style="margin-bottom: 20px; background: var(--accent-color); display: flex; align-items: center; justify-content: center; gap: 10px;">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+    Add New Entry
+  </button>
 
-    <select id="category">
-      <option value="Needs">Needs</option>
-      <option value="Wants">Wants</option>
-      <option value="Savings">Savings</option>
-    </select>
+  <!-- Add Expense Modal -->
+  <div id="entry-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="card" id="edit-form-card" style="margin-bottom: 0; position: relative;">
+        <button class="close-modal" onclick="closeEntryModal()">&times;</button>
+        <h3>Add / Edit Entry</h3>
+        <input type="hidden" id="edit-index" value="-1">
+        <input type="text" id="desc" placeholder="Description (e.g., Rent, Grocery)">
+        <input type="number" id="amount" placeholder="Amount (RM)">
+        <input type="date" id="dueDate">
 
-    <button id="add-btn" onclick="addItem()">➕ Add Item</button>
+        <select id="category">
+          <option value="Needs">Needs</option>
+          <option value="Wants">Wants</option>
+          <option value="Savings">Savings</option>
+        </select>
+
+        <button id="add-btn" onclick="addItem()">Add Item</button>
+      </div>
+    </div>
   </div>
 
   <!-- Data Table -->
@@ -99,9 +113,9 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
       <h3 style="margin: 0;">All Entries</h3>
       <div style="display: flex; gap: 8px;">
-        <button onclick="exportToCSV()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #2196F3;">📤 Export</button>
-        <button onclick="document.getElementById('csv-upload').click()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #FF9800;">📥 Upload</button>
-        <button onclick="resetData()" style="width: auto; padding: 5px 10px; font-size: 0.8rem; margin-top: 0; background: #f44336;">🔄 Reset</button>
+        <button onclick="exportToCSV()" style="width: auto; padding: 8px 12px; font-size: 0.75rem; margin-top: 0; background: #3b82f6;">Export</button>
+        <button onclick="document.getElementById('csv-upload').click()" style="width: auto; padding: 8px 12px; font-size: 0.75rem; margin-top: 0; background: #f59e0b;">Upload</button>
+        <button onclick="resetData()" style="width: auto; padding: 8px 12px; font-size: 0.75rem; margin-top: 0; background: #ef4444;">Reset</button>
         <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="importFromCSV(event)">
       </div>
     </div>
@@ -151,7 +165,5 @@
     calculateSplit();
   });
 </script>
-</body>
-</html>>
 </body>
 </html>
