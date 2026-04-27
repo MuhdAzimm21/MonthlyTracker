@@ -174,15 +174,51 @@ function clearForm() {
   document.getElementById("dueDate").value = "";
 }
 
+function openFilterModal() {
+  const modal = document.getElementById('filter-modal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeFilterModal() {
+  const modal = document.getElementById('filter-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+let currentCategoryFilter = "All";
+let currentTimeFilter = "All";
+
 function renderAll() {
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
+  
   const today = new Date(); today.setHours(0,0,0,0);
   const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  const searchKeyword = document.getElementById("search-keyword")?.value.toLowerCase() || "";
 
-  data.forEach((item, index) => {
+  const filteredData = data.filter(item => {
+    // Category Filter
+    const catMatch = currentCategoryFilter === "All" || item.category === currentCategoryFilter;
+    
+    // Time Filter
+    let timeMatch = true;
+    if (currentTimeFilter !== "All" && item.dueDate) {
+      const itemDate = new Date(item.dueDate);
+      if (currentTimeFilter === "Week") timeMatch = itemDate >= startOfWeek;
+      else if (currentTimeFilter === "Month") timeMatch = itemDate >= startOfMonth;
+    } else if (currentTimeFilter !== "All" && !item.dueDate) {
+      timeMatch = false;
+    }
+    
+    // Keyword Search
+    const nameMatch = item.desc.toLowerCase().includes(searchKeyword);
+    
+    return catMatch && timeMatch && nameMatch;
+  });
+
+  filteredData.forEach((item) => {
     const originalIndex = data.indexOf(item);
     const tr = document.createElement('tr');
     if (item.completed) tr.classList.add('completed-row');
@@ -199,12 +235,16 @@ function renderAll() {
     tbody.appendChild(tr);
   });
 
-  if (salary > 0 && (currentCategoryFilter === "All" || currentCategoryFilter === "Needs")) {
+  if (salary > 0 && (currentCategoryFilter === "All" || currentCategoryFilter === "Needs") && !searchKeyword) {
     const autoValue = getAutoNeedsValue();
     const autoRow = document.createElement('tr');
     autoRow.style.background = "rgba(16, 185, 129, 0.05)";
     autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">RM ${autoValue.toFixed(2)}</td><td data-label="Category">Needs</td><td data-label="Due Date">-</td><td data-label="Action"><small>Auto</small></td>`;
     tbody.appendChild(autoRow);
+  }
+  
+  if (filteredData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="no-data">No results found.</td></tr>';
   }
 }
 

@@ -80,11 +80,17 @@
     </div>
   </div>
 
-  <!-- Modal Trigger Button -->
-  <button onclick="openEntryModal()" style="margin-bottom: 20px; background: var(--accent-color); display: flex; align-items: center; justify-content: center; gap: 10px;">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-    Add New Entry
-  </button>
+  <!-- Modal Trigger Buttons -->
+  <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <button onclick="openEntryModal()" style="flex: 2; margin-top: 0; background: var(--accent-color); display: flex; align-items: center; justify-content: center; gap: 10px;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+      Add Entry
+    </button>
+    <button onclick="openFilterModal()" style="flex: 1; margin-top: 0; background: #333; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" /></svg>
+      Filter
+    </button>
+  </div>
 
   <!-- Add Expense Modal -->
   <div id="entry-modal" class="modal-overlay">
@@ -108,6 +114,42 @@
     </div>
   </div>
 
+  <!-- Filter Modal -->
+  <div id="filter-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="card" style="margin-bottom: 0; position: relative;">
+        <button class="close-modal" onclick="closeFilterModal()">&times;</button>
+        <h3>Search & Filter</h3>
+        
+        <div class="filter-group">
+          <label>Search Keyword</label>
+          <input type="text" id="search-keyword" placeholder="Search description..." oninput="renderAll()" style="margin-top: 5px;">
+        </div>
+
+        <div class="filter-group" style="margin-top: 20px;">
+          <label>Category</label>
+          <div class="filter-pills" id="filter-category">
+            <div class="pill active" data-value="All">All</div>
+            <div class="pill" data-value="Needs">Needs</div>
+            <div class="pill" data-value="Wants">Wants</div>
+            <div class="pill" data-value="Savings">Savings</div>
+          </div>
+        </div>
+
+        <div class="filter-group" style="margin-top: 15px;">
+          <label>Timeframe</label>
+          <div class="filter-pills" id="filter-time">
+            <div class="pill active" data-value="All">All</div>
+            <div class="pill" data-value="Week">This Week</div>
+            <div class="pill" data-value="Month">This Month</div>
+          </div>
+        </div>
+
+        <button onclick="closeFilterModal()" style="margin-top: 25px; background: #333;">View Results</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Data Table -->
   <div class="card" id="data-table-card" style="opacity: 0.5; pointer-events: none;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -117,27 +159,6 @@
         <button onclick="document.getElementById('csv-upload').click()" style="width: auto; padding: 8px 12px; font-size: 0.75rem; margin-top: 0; background: #f59e0b;">Upload</button>
         <button onclick="resetData()" style="width: auto; padding: 8px 12px; font-size: 0.75rem; margin-top: 0; background: #ef4444;">Reset</button>
         <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="importFromCSV(event)">
-      </div>
-    </div>
-
-    <!-- Filter Bar -->
-    <div class="filter-wrapper">
-      <div class="filter-group">
-        <label>Category</label>
-        <div class="filter-pills" id="filter-category">
-          <div class="pill active" data-value="All">All</div>
-          <div class="pill" data-value="Needs">Needs</div>
-          <div class="pill" data-value="Wants">Wants</div>
-          <div class="pill" data-value="Savings">Savings</div>
-        </div>
-      </div>
-      <div class="filter-group">
-        <label>Timeframe</label>
-        <div class="filter-pills" id="filter-time">
-          <div class="pill active" data-value="All">All</div>
-          <div class="pill" data-value="Week">This Week</div>
-          <div class="pill" data-value="Month">This Month</div>
-        </div>
       </div>
     </div>
 
