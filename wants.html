@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Wants - Monthly Tracker</title>
+  <title>Savings - Monthly Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1c1c1c">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0d0d">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -36,9 +35,8 @@
 </div>
 
 <div class="container">
-  <h2>Table of Wants</h2>
-
-  <div class="card"  >
+  <h2>Wants</h2>
+  <div class="card">
     <table id="table">
       <thead>
         <tr>
@@ -49,8 +47,8 @@
       </thead>
       <tbody></tbody>
     </table>
-    <div id="total-category" style="text-align: right; margin-top: 15px; font-weight: bold; font-size: 0.6rem;">
-      Total Wants: RM 0 / RM 0
+    <div id="total-category" style="text-align: right; margin-top: 20px; font-weight: 700; color: var(--text-secondary); font-size: 0.85rem;">
+      Total: RM 0 / RM 0
     </div>
   </div>
 </div>
@@ -58,10 +56,7 @@
 <script src="popup.js"></script>
 <script src="app.js"></script>
 <script>
-  window.addEventListener('load', () => {
-    renderCategory('Wants');
-  });
+  window.addEventListener('load', () => { renderCategory('Wants'); });
 </script>
 </body>
-</html>>
 </html>

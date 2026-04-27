@@ -18,15 +18,29 @@ html, body {
   overflow: hidden;
 }
 
+/* Global Scrollbar Hiding */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-color);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
   font-size: 14px;
+}
+
+.icon-inline {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 /* Mobile Font Scaling & Smaller Icons */
@@ -38,7 +52,7 @@ body {
 
   /* Smaller SVG Icons */
   .nav-item svg { width: 18px; height: 18px; }
-  .icon-inline { width: 15px; height: 14px; }
+  .icon-inline { width: 14px; height: 14px; }
   .fab { width: 48px; height: 48px; margin-bottom: 25px; }
   .fab svg { width: 22px !important; height: 22px !important; }
 
@@ -63,8 +77,6 @@ body {
   td { font-size: 0.75rem; min-height: 24px; }
   td::before { font-size: 0.65rem; }
 }
-
-body::-webkit-scrollbar { display: none; }
 
 
 .container {
