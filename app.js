@@ -285,6 +285,8 @@ function renderCategory(category) {
   if (totalEl) totalEl.textContent = `Balance: RM ${(totalAmount - completedAmount).toFixed(2)} / RM ${totalAmount.toFixed(2)}`;
 }
 
+let urgentNotifications = [];
+
 function updateDashboard() {
   const dashSalary = document.getElementById("dash-salary");
   const dashTotal = document.getElementById("dash-total");
@@ -295,7 +297,8 @@ function updateDashboard() {
   let totalExpenses = 0, dueSoonCount = 0;
   const today = new Date(); today.setHours(0,0,0,0);
   const nextWeek = new Date(); nextWeek.setDate(today.getDate() + 7);
-  remindersList.innerHTML = "";
+  
+  urgentNotifications = [];
   data.forEach(item => {
     totalExpenses += item.amount;
     if (item.dueDate && !item.completed) {
@@ -305,20 +308,70 @@ function updateDashboard() {
         const isOverdue = dueDate < today;
         const isDueSoon = dueDate >= today && dueDate <= nextWeek;
         if (isOverdue || isDueSoon) {
-          remindersList.innerHTML += `
-            <div class="reminder-item ${isOverdue ? 'overdue' : 'due-soon'}">
-              ${isOverdue ? ICONS.danger : ICONS.warning}
-              <div><strong>${item.desc}</strong> ${isOverdue ? 'overdue since' : 'due on'} ${item.dueDate}</div>
-            </div>`;
+          urgentNotifications.push({
+            ...item,
+            isOverdue,
+            isDueSoon,
+            sortDate: dueDate
+          });
         }
       }
     }
   });
+
+  // Sort: Overdue first, then by date ascending
+  urgentNotifications.sort((a, b) => {
+    if (a.isOverdue && !b.isOverdue) return -1;
+    if (!a.isOverdue && b.isOverdue) return 1;
+    return a.sortDate - b.sortDate;
+  });
+
+  remindersList.innerHTML = "";
+  if (urgentNotifications.length === 0) {
+    remindersList.innerHTML = '<p class="no-data">No urgent notifications.</p>';
+  } else {
+    // Show only top 3
+    urgentNotifications.slice(0, 3).forEach(item => {
+      remindersList.innerHTML += `
+        <div class="reminder-item ${item.isOverdue ? 'overdue' : 'due-soon'}">
+          ${item.isOverdue ? ICONS.danger : ICONS.warning}
+          <div><strong>${item.desc}</strong> ${item.isOverdue ? 'overdue since' : 'due on'} ${item.dueDate}</div>
+        </div>`;
+    });
+    if (urgentNotifications.length > 3) {
+      remindersList.innerHTML += `<p style="font-size: 0.75rem; color: var(--accent-color); text-align: center; margin-top: 5px;">+ ${urgentNotifications.length - 3} more. Tap to view all.</p>`;
+    }
+  }
+
   const autoNeeds = getAutoNeedsValue(); totalExpenses += autoNeeds;
-  if (remindersList.innerHTML === "") remindersList.innerHTML = '<p class="no-data">No urgent notifications.</p>';
   dashTotal.textContent = `RM ${totalExpenses.toFixed(2)}`;
   dashDueSoon.textContent = `${dueSoonCount} Items`;
   calculateSplit();
+}
+
+function showAllNotifications() {
+  const modal = document.getElementById("notifications-modal");
+  const list = document.getElementById("all-reminders-list");
+  if (!modal || !list) return;
+
+  list.innerHTML = "";
+  if (urgentNotifications.length === 0) {
+    list.innerHTML = '<p class="no-data">No urgent notifications.</p>';
+  } else {
+    urgentNotifications.forEach(item => {
+      list.innerHTML += `
+        <div class="reminder-item ${item.isOverdue ? 'overdue' : 'due-soon'}" style="margin-bottom: 10px;">
+          ${item.isOverdue ? ICONS.danger : ICONS.warning}
+          <div><strong>${item.desc}</strong> ${item.isOverdue ? 'overdue since' : 'due on'} ${item.dueDate}</div>
+        </div>`;
+    });
+  }
+  modal.classList.add("active");
+}
+
+function closeAllNotifications() {
+  const modal = document.getElementById("notifications-modal");
+  if (modal) modal.classList.remove("active");
 }
 
 function calculateSplit() {
