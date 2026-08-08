@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings - Monthly Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#20242c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" id="theme-stylesheet" href="">
+  <link rel="stylesheet" href="popup.css">
+  <script src="theme.js"></script>
+  <script src="settings.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="settings-page">
+  <div class="container">
+    <a class="top-settings" href="index.html" aria-label="Back to dashboard"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 19.128A9.97 9.97 0 0112 19.5c-5.246 0-9.5-4.03-9.5-9s4.254-9 9.5-9 9.5 4.03 9.5 9c0 2.093-.755 4.02-2.02 5.54M15 19.128V16.5m0 2.628l-2.25-2.25M15 19.128l2.25-2.25"/></svg></a>
+    <h2>Settings</h2>
+    <form data-settings-form>
+      <section class="settings-section">
+        <h3>Appearance</h3>
+        <p class="settings-intro">Choose a visual direction. Your choice is saved on this device.</p>
+        <div class="theme-options" aria-label="Theme options">
+          <button class="theme-choice" type="button" data-theme-choice="default"><span class="theme-preview"><span></span><span></span><span></span><span></span></span><span class="theme-copy"><strong>Dark Neumorphism</strong><small>The tactile, dark default with soft raised and inset surfaces.</small></span><span class="theme-check" aria-hidden="true">&#10003;</span></button>
+          <button class="theme-choice" type="button" data-theme-choice="aurora"><span class="theme-preview aurora"><span></span><span></span><span></span><span></span></span><span class="theme-copy"><strong>Aurora Glass</strong><small>Frosted panels with a refined aurora backdrop.</small></span><span class="theme-check" aria-hidden="true">&#10003;</span></button>
+          <button class="theme-choice" type="button" data-theme-choice="bento"><span class="theme-preview bento"><span></span><span></span><span></span><span></span></span><span class="theme-copy"><strong>Bento Pulse</strong><small>Modular dashboard cards with crisp, high-contrast depth.</small></span><span class="theme-check" aria-hidden="true">&#10003;</span></button>
+          <button class="theme-choice" type="button" data-theme-choice="clay"><span class="theme-preview clay"><span></span><span></span><span></span><span></span></span><span class="theme-copy"><strong>Soft Clay</strong><small>Warm, playful claymorphism with rounded dimensional forms.</small></span><span class="theme-check" aria-hidden="true">&#10003;</span></button>
+        </div>
+      </section>
+      <section class="settings-section">
+        <h3>Budget & reminders</h3>
+        <label class="settings-row"><span><strong>Currency</strong><small>Used throughout the tracker</small></span><select name="currency"><option value="MYR">MYR — Malaysian Ringgit</option><option value="USD">USD — US Dollar</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — British Pound</option></select></label>
+        <label class="settings-row"><span><strong>Reminder lead time</strong><small>Mark bills as due soon this many days ahead</small></span><select name="reminderDays"><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option></select></label>
+        <label class="settings-row"><span><strong>Default category</strong><small>Preselected when adding a new entry</small></span><select name="defaultCategory"><option value="Needs">Needs</option><option value="Wants">Wants</option><option value="Savings">Savings</option></select></label>
+      </section>
+      <section class="settings-section">
+        <h3>Dashboard & accessibility</h3>
+        <label class="settings-row settings-toggle"><span><strong>Show health score</strong><small>Display budget health on the dashboard</small></span><input name="showHealth" type="checkbox"></label>
+        <label class="settings-row settings-toggle"><span><strong>Show reminders</strong><small>Display urgent notifications on the dashboard</small></span><input name="showReminders" type="checkbox"></label>
+        <label class="settings-row settings-toggle"><span><strong>Larger text</strong><small>Increase reading comfort across the app</small></span><input name="largeText" type="checkbox"></label>
+        <label class="settings-row settings-toggle"><span><strong>Reduce motion</strong><small>Minimise visual animations</small></span><input name="reducedMotion" type="checkbox"></label>
+      </section>
+      <section class="settings-section">
+        <h3>Data</h3>
+        <div class="settings-actions"><button type="button" data-action="export" class="btn-secondary">Export CSV</button><button type="button" data-action="new-month" class="btn-secondary">Start new month</button><button type="button" data-action="clear-data" class="btn-danger">Clear tracker data</button></div>
+      </section>
+    </form>
+  </div>
+  <script src="popup.js"></script><script src="app.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(70, 80, 98, 0.32);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -23,13 +23,13 @@
 }
 
 .popup-card {
-  background: #1e1e1e;
-  border: 1px solid #444;
-  border-radius: 20px;
+  background: var(--card-bg);
+  border: 0;
+  border-radius: 22px;
   width: 85%;
   max-width: 360px;
   padding: 30px 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 10px 10px 22px #12151a, -10px -10px 22px #303640;
   transform: translateY(20px) scale(0.9);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   text-align: center;
@@ -43,13 +43,13 @@
   font-size: 0.9rem;
   font-weight: 800;
   margin-bottom: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: -0.5px;
 }
 
 .popup-message {
   font-size: 0.6rem;
-  color: #cccccc;
+  color: var(--text-secondary);
   margin-bottom: 25px;
   line-height: 1.6;
 }
@@ -77,17 +77,18 @@
 }
 
 .popup-btn-primary {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
+  background: var(--success);
   color: white;
 }
 
 .popup-btn-secondary {
-  background: #333;
-  color: #eee;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 4px 4px 8px #12151a, -4px -4px 8px #303640;
 }
 
 .popup-btn-danger {
-  background: linear-gradient(135deg, #f44336, #d32f2f);
+  background: var(--danger);
   color: white;
 }
 
@@ -107,14 +108,14 @@
 }
 
 .toast {
-  background: #252525;
-  color: #fff;
+  background: var(--card-bg);
+  color: var(--text-primary);
   padding: 10px 24px;
   border-radius: 50px;
   font-size: 0.7rem;
   font-weight: 500;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  border: 1px solid #444;
+  box-shadow: 6px 6px 14px #12151a, -6px -6px 14px #303640;
+  border: 0;
   opacity: 0;
   transform: translateY(-20px);
   animation: toastFadeIn 0.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;

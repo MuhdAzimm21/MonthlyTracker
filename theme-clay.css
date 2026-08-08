@@ -1,0 +1,20 @@
+/* Soft Clay — warm, playful claymorphism with generous rounded forms */
+:root {
+  --bg-color: #302b37;
+  --card-bg: #393340;
+  --nav-bg: #393340;
+  --text-primary: #fff8fb;
+  --text-secondary: #c7b9c4;
+  --accent-color: #e887b7;
+  --success: #7dd0a6;
+  --warning: #f0ba75;
+  --danger: #f27f91;
+  --shadow-dark: #201c26;
+  --shadow-light: #4c4554;
+  --inset: inset 5px 5px 10px #26212d, inset -5px -5px 10px #4b4350;
+}
+body { background: radial-gradient(circle at 85% 0%, #51415c, transparent 35%), #302b37; }
+.card, .stat-card { border-radius: 28px; }
+.bottom-nav { border-radius: 29px; }
+.fab { border-radius: 23px; background: var(--accent-color); }
+input:not([type="checkbox"]), select, .pill { border-radius: 18px; }

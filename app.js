@@ -10,6 +10,14 @@ let salaryConfirmed = localStorage.getItem("salaryConfirmed") === "true";
 let ruleSelected = localStorage.getItem("ruleSelected") === "true";
 
 let openedRow = null;
+
+function formatMoney(value) {
+  return window.AppSettings ? window.AppSettings.money(value) : `RM ${Number(value || 0).toFixed(2)}`;
+}
+
+function getReminderDays() {
+  return Number(window.AppSettings?.get().reminderDays || 7);
+}
 let touchstartX = 0;
 let touchendX = 0;
 
@@ -93,6 +101,11 @@ function advanceDate(dateStr, months) {
 }
 
 function openEntryModal() {
+  if (!salaryConfirmed || !ruleSelected) {
+    const missingStep = !salaryConfirmed ? 'your monthly income' : 'a budget rule';
+    Popup.alert('Complete setup first', `Please set ${missingStep} before adding an entry.`);
+    return;
+  }
   const modal = document.getElementById('entry-modal');
   if (modal) modal.classList.add('active');
 }
@@ -119,7 +132,7 @@ async function addItem() {
   const currentTotal = data.filter((item, idx) => item.category === category && idx !== editIndex).reduce((sum, item) => sum + item.amount, 0);
 
   if (currentTotal + amount > limit) {
-    const proceed = await Popup.confirm("Budget Exceeded", `Limit is RM ${limit.toFixed(2)}. Total will be RM ${(currentTotal + amount).toFixed(2)}. Save anyway?`);
+    const proceed = await Popup.confirm("Budget Exceeded", `Limit is ${formatMoney(limit)}. Total will be ${formatMoney(currentTotal + amount)}. Save anyway?`);
     if (!proceed) return;
   }
 
@@ -172,6 +185,8 @@ function clearForm() {
   document.getElementById("desc").value = "";
   document.getElementById("amount").value = "";
   document.getElementById("dueDate").value = "";
+  const defaultCategory = window.AppSettings?.get().defaultCategory;
+  if (defaultCategory) document.getElementById("category").value = defaultCategory;
 }
 
 function openFilterModal() {
@@ -224,7 +239,7 @@ function renderAll() {
     if (item.completed) tr.classList.add('completed-row');
     tr.innerHTML = `
       <td data-label="Description">${item.desc}</td>
-      <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
+      <td data-label="Amount">${formatMoney(item.amount)}</td>
       <td data-label="Category">${item.category}</td>
       <td data-label="Due Date">${item.dueDate || "-"}</td>
       <td data-label="Action">
@@ -239,7 +254,7 @@ function renderAll() {
     const autoValue = getAutoNeedsValue();
     const autoRow = document.createElement('tr');
     autoRow.style.background = "rgba(16, 185, 129, 0.05)";
-    autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">RM ${autoValue.toFixed(2)}</td><td data-label="Category">Needs</td><td data-label="Due Date">-</td><td data-label="Action"><small>Auto</small></td>`;
+    autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">${formatMoney(autoValue)}</td><td data-label="Category">Needs</td><td data-label="Due Date">-</td><td data-label="Action"><small>Auto</small></td>`;
     tbody.appendChild(autoRow);
   }
   
@@ -266,7 +281,7 @@ function renderCategory(category) {
     
     tr.innerHTML = `
       <td data-label="Description">${item.desc}</td>
-      <td data-label="Amount">RM ${item.amount.toFixed(2)}</td>
+      <td data-label="Amount">${formatMoney(item.amount)}</td>
       <td data-label="Date">${item.dueDate || "-"}</td>
     `;
     
@@ -278,11 +293,11 @@ function renderCategory(category) {
     const autoValue = getAutoNeedsValue(); totalAmount += autoValue;
     const autoRow = document.createElement('tr');
     autoRow.style.background = "rgba(16, 185, 129, 0.05)";
-    autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">RM ${autoValue.toFixed(2)}</td><td data-label="Date">-</td>`;
+    autoRow.innerHTML = `<td data-label="Description">Foods (Auto)</td><td data-label="Amount">${formatMoney(autoValue)}</td><td data-label="Date">-</td>`;
     tbody.appendChild(autoRow);
   }
   const totalEl = document.getElementById("total-category");
-  if (totalEl) totalEl.textContent = `Balance: RM ${(totalAmount - completedAmount).toFixed(2)} / RM ${totalAmount.toFixed(2)}`;
+  if (totalEl) totalEl.textContent = `Balance: ${formatMoney(totalAmount - completedAmount)} / ${formatMoney(totalAmount)}`;
 }
 
 let urgentNotifications = [];
@@ -293,10 +308,10 @@ function updateDashboard() {
   const dashDueSoon = document.getElementById("dash-due-soon");
   const remindersList = document.getElementById("reminders-list");
   if (!dashSalary) return;
-  dashSalary.textContent = `RM ${salary.toFixed(2)}`;
+  dashSalary.textContent = formatMoney(salary);
   let totalExpenses = 0, dueSoonCount = 0;
   const today = new Date(); today.setHours(0,0,0,0);
-  const nextWeek = new Date(); nextWeek.setDate(today.getDate() + 7);
+  const nextWeek = new Date(); nextWeek.setDate(today.getDate() + getReminderDays());
   
   urgentNotifications = [];
   data.forEach(item => {
@@ -344,7 +359,7 @@ function updateDashboard() {
   }
 
   const autoNeeds = getAutoNeedsValue(); totalExpenses += autoNeeds;
-  dashTotal.textContent = `RM ${totalExpenses.toFixed(2)}`;
+  dashTotal.textContent = formatMoney(totalExpenses);
   dashDueSoon.textContent = `${dueSoonCount} Items`;
   calculateSplit();
 }
@@ -385,8 +400,8 @@ function calculateSplit() {
     const el = document.getElementById(id);
     const barEl = document.getElementById(barId);
     const totalDisplayEl = document.getElementById(totalId);
-    if (el) el.textContent = `RM ${alloc.toFixed(0)}`;
-    if (totalDisplayEl) totalDisplayEl.textContent = `RM ${total.toFixed(0)}`;
+    if (el) el.textContent = formatMoney(alloc);
+    if (totalDisplayEl) totalDisplayEl.textContent = formatMoney(total);
     if (barEl) {
       const percentage = salary > 0 ? Math.min(100, (total / alloc) * 100) : 0;
       barEl.style.width = `${percentage}%`;
@@ -523,9 +538,18 @@ window.addEventListener('load', () => {
   showSkeletons("#table"); updateActiveNav();
   const path = window.location.pathname.split("/").pop() || "index.html";
   if (path === "index.html") updateDashboard();
-  else if (path === "entry.html") { syncSetupUI(); renderAll(); initFilters(); }
+  else if (path === "entry.html") { syncSetupUI(); renderAll(); initFilters(); initEntryModal(); }
   else { 
     const cat = path.replace(".html", "").charAt(0).toUpperCase() + path.replace(".html", "").slice(1);
     if (["Needs", "Savings", "Wants"].includes(cat)) renderCategory(cat);
   }
 });
+
+function initEntryModal() {
+  const openButton = document.getElementById('open-entry-modal');
+  const modal = document.getElementById('entry-modal');
+  if (openButton) openButton.addEventListener('click', openEntryModal);
+  if (modal) modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeEntryModal();
+  });
+}

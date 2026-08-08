@@ -1,0 +1,19 @@
+/* Aurora Glass — refined glassmorphism with a quiet aurora backdrop */
+:root {
+  --bg-color: #172135;
+  --card-bg: rgba(35, 49, 78, .58);
+  --nav-bg: rgba(30, 43, 69, .74);
+  --text-primary: #f4f7ff;
+  --text-secondary: #b7c3dc;
+  --accent-color: #9a8cff;
+  --success: #67d7bb;
+  --warning: #facb77;
+  --danger: #ff91ab;
+  --shadow-dark: #0a1020;
+  --shadow-light: #2f4267;
+  --inset: inset 4px 4px 10px rgba(8, 14, 28, .65), inset -4px -4px 10px rgba(84, 111, 161, .22);
+}
+body { background: radial-gradient(circle at 12% 4%, #42518a 0, transparent 33%), radial-gradient(circle at 92% 16%, #315d69 0, transparent 30%), #172135; }
+.card, .bottom-nav, .stat-card, .pill, .reminder-item, tbody tr { border: 1px solid rgba(220, 229, 255, .13); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.bottom-sheet-content, .bottom-sheet-header { background: rgba(28, 39, 62, .94); }
+input:not([type="checkbox"]), select { background: rgba(14, 23, 42, .42); }

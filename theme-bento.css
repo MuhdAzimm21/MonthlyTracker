@@ -1,0 +1,23 @@
+/* Bento Pulse — modular, high-contrast dashboard surfaces */
+:root {
+  --bg-color: #111824;
+  --card-bg: #182232;
+  --nav-bg: #182232;
+  --text-primary: #f4f6fb;
+  --text-secondary: #9ba9bd;
+  --accent-color: #7a9cff;
+  --success: #57c89d;
+  --warning: #f4bd67;
+  --danger: #f77d8a;
+  --shadow-dark: #090d14;
+  --shadow-light: #27364d;
+  --inset: inset 5px 5px 10px #0d131d, inset -5px -5px 10px #26344a;
+}
+body { background: #111824; }
+.card, .stat-card { border-radius: 18px; }
+.dashboard-grid { gap: 12px; }
+.stat-card:nth-child(1) { background: linear-gradient(145deg, #1d2b44, #182232); }
+.stat-card:nth-child(2) { background: linear-gradient(145deg, #183a39, #182232); }
+.stat-card:nth-child(3) { background: linear-gradient(145deg, #3d3020, #182232); }
+.bottom-nav { border-radius: 18px; }
+.fab { border-radius: 16px; }
